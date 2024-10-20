@@ -16,7 +16,6 @@ from skimage.transform import rotate
 class ISICDataset(Dataset):
     def __init__(self, args, data_path , transform = None, mode = 'Training',plane = False):
 
-#ISIC2018_Task1_Validation_GroundTruth
         df = pd.read_csv(os.path.join(data_path, 'ISIC2018_Task1_' + mode + '_GroundTruth.csv'), encoding='gbk')
         self.name_list = df.iloc[:,0].tolist()
         self.label_list = df.iloc[:,1].tolist()
