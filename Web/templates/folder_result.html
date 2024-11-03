@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Success</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Navigation Bar -->
+    <div class="header-tab">
+      <span class="title">Potatoes Medical Image Segmenter</span>
+      <div class="nav-links">
+        <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.img_upload') }}" class="header-link"
+          >Segment Image</a
+        >
+        <a href="{{ url_for('main.folder_upload') }}" class="header-link"
+          >Segment Folder</a
+        >
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="background"></div>
+
+    <!-- Success Message -->
+    <div class="container">
+      <h2 style="text-align: center; color: green">Success</h2>
+      <p style="text-align: center">
+        Your request has been successfully processed!
+      </p>
+    </div>
+  </body>
+</html>
