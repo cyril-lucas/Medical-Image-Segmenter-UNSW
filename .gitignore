@@ -1,1 +1,12 @@
-capstone-project-2024-t3-9900t15apotatoes\dataset
+# Ignore contents of specific folders
+shared/data/*
+shared/logs/*
+shared/result/*
+
+# Allow the folders themselves to remain in version control
+!shared/data/.gitkeep
+!shared/logs/.gitkeep
+!shared/result/.gitkeep
+
+
+Key_fix.txt
