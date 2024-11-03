@@ -1,0 +1,401 @@
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-size: 16px;
+  margin: 0;
+  padding: 0;
+  font-family: Inter, sans-serif;
+  background: #0d1b2a;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  text-align: center;
+  flex-direction: column;
+}
+
+/* Navigation Bar Styling */
+.header-tab {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background-color: #0077a8;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-wrap: wrap; /* Allows wrapping for smaller screens */
+}
+
+.header-tab .title-container {
+  display: flex;
+  align-items: center;
+  flex: 1; /* Ensures title takes up available space */
+}
+
+.header-tab .title {
+  font-weight: bold;
+  padding-left: 10px;
+  font-size: 26px;
+  letter-spacing: 1px;
+  white-space: nowrap; /* Prevents breaking in the title */
+}
+
+.header-tab .nav-links {
+  display: flex;
+  gap: 15px;
+  margin-left: auto;
+  padding-right: 10px;
+  flex-wrap: wrap;
+}
+
+.header-tab .header-link {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 8px 16px;
+  background-color: #005f80;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.header-tab .header-link:hover {
+  background-color: #00465b;
+  color: #f1f1f1;
+  transform: translateY(-2px);
+}
+
+.header-tab .header-link:active {
+  transform: translateY(1px); /* Minor adjustment for a "pressed" effect */
+}
+
+/* Background Styling */
+.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("/static/images/Background.jpg") no-repeat center center fixed;
+  background-size: cover;
+  z-index: -1;
+}
+
+/* Main Container */
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px 20px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Styling used in index.html */
+
+/* No Data Message Styling */
+.no-data-message {
+  font-size: 18px;
+  color: #ff5555;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Data Table Styling */
+.data-table {
+  width: 100%;
+  max-width: 1200px;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #ffffff;
+  color: #333;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.data-table thead {
+  background-color: #0077a8;
+  color: #ffffff;
+}
+
+.data-table th,
+.data-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.data-table td {
+  color: #555;
+  font-size: 16px;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Styling of Segmentation task */
+
+/* Content Wrapper */
+.content-wrapper {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Translucent Container */
+.translucent-container {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 10px;
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Form Container Styling */
+.form-container label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.form-container select,
+.form-container input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #555;
+  margin-top: 5px;
+}
+
+/* Status Container  Styling*/
+.status-container .status-message {
+  font-size: 16px;
+  text-align: center;
+  color: #ff5555;
+  margin-bottom: 10px;
+}
+
+.status-container .status-message.success {
+  color: #4caf50; /* Green for success messages */
+}
+
+/* Image Preview Area */
+.image-preview-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns for previews */
+  gap: 20px;
+  max-height: 395px;
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.7);
+  margin-top: 15px;
+}
+
+/* Individual Image Preview Styling */
+.image-preview {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+/* Hover Effect for Preview Images */
+.image-preview:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+/* Predict Button */
+.predict-button {
+  background-color: #0077a8;
+  color: white;
+  padding: 12px 24px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 20px;
+}
+.predict-button:hover:not(:disabled) {
+  background-color: #005f80; /* Darker shade on hover */
+  transform: translateY(-2px) scale(1.05); /* Scale up and lift on hover */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Add shadow */
+}
+.predict-button:disabled {
+  background-color: #ddd;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Button Styling */
+.clear-button {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.clear-button:hover {
+  background-color: #e04444;
+}
+
+/* Folder Path Display Styling */
+#folderPath {
+  font-size: 14px;
+  color: #666;
+  margin-left: 10px;
+}
+
+/* Processing box */
+
+/* Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  font-size: 18px;
+  color: #0d1b2a;
+  margin-bottom: 10px;
+}
+
+.modal-content p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Loader Animation */
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0077a8;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+  display: inline-block; /* Ensure it can be animated */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Drag-and-Drop Container Styling */
+.drag-drop-container {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.drop-zone {
+  position: relative;
+  border: 2px dashed #0077a8;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.drop-zone p {
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.drop-zone button {
+  background-color: #0077a8;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.drop-zone button:hover {
+  background-color: #005f80;
+}
+
+.drop-zone.dragging {
+  background-color: rgba(0, 119, 168, 0.1);
+  border-color: #005f80;
+}
+
+.single-image-preview {
+  width: 100%;
+  max-width: 400px; /* Adjust the max-width as needed */
+  height: auto;
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  margin-top: 10px;
+}
+
+/* CSS for drop zone highlighting */
+.drop-zone.dragging {
+  background-color: rgba(0, 119, 168, 0.1);
+  border-color: #005f80;
+}
