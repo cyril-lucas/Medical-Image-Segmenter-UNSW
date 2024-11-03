@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet" />
+        <title>Uploaded Image Preview</title>
+    </head>
+    <body>
+        <div class="v3_3">
+            <div class="v4_80"></div>
+            <div class="container">
+                <!-- Header -->
+                <span class="title">Segmentation Result</span>
+                
+                <!-- Image Preview -->
+                <div class="preview-container">
+                    <img id="uploaded-image" src="{{ uploaded_image_url }}" alt="Uploaded Image" />
+                </div>
+                
+                <!-- Button to go back to index page and refresh -->
+                <div class="button-container">
+                    <a href="{{ url_for('index') }}" class="refresh-button">Segment Another Image</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

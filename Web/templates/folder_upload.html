@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Folder Segmentation</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Navigation Bar -->
+    <div class="header-tab">
+      <span class="title">Potatoes Medical Image Segmenter</span>
+      <div class="nav-links">
+        <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.img_upload') }}" class="header-link"
+          >Segment Image</a
+        >
+        <a href="{{ url_for('main.folder_upload') }}" class="header-link"
+          >Segment Folder</a
+        >
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="background"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+      <h2>Test Folder Segmentation</h2>
+      <div class="content-wrapper">
+        <!-- Left Container: Form Section -->
+        <div class="form-container translucent-container">
+          <form id="uploadForm" method="POST" enctype="multipart/form-data">
+            <button type="button" id="clearSelections" class="clear-button">
+              Reset
+            </button>
+            <div>
+              <label for="taskType">Task Type:</label>
+              <select id="taskType" name="taskType" required>
+                <option value="">Select Task Type</option>
+                {% for task in task_types %}
+                <option value="{{ task }}">{{ task }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="dataset">Select Dataset:</label>
+              <select id="dataset" name="dataset" required disabled>
+                <option value="">Select Dataset</option>
+              </select>
+            </div>
+            <div>
+              <label for="model">Select Model:</label>
+              <select id="model" name="model" required disabled>
+                <option value="">Select Model</option>
+              </select>
+            </div>
+            <div>
+              <label for="testFolder">Upload the Test Folder:</label>
+              <input
+                type="file"
+                id="testFolder"
+                name="testFolder"
+                webkitdirectory
+                directory
+                multiple
+                required
+              />
+              <span id="folderPath">No files chosen</span>
+            </div>
+            <p class="hint-text">
+              Hint: Folder should contain at least 1 image in a supported format
+              (".png", ".jpg", ".jpeg", ".bmp").
+            </p>
+          </form>
+        </div>
+
+        <!-- Right Container: Status and Preview Section -->
+        <div class="status-container translucent-container">
+          <div id="statusMessage" class="status-message">
+            <p style="color: red">
+              Please select a folder to see image previews and validation
+              messages here.
+            </p>
+          </div>
+          <div id="imagePreview" class="image-preview-container"></div>
+        </div>
+      </div>
+
+      <!-- Predict Button -->
+      <button id="predictButton" class="predict-button" disabled>
+        Predict
+      </button>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal">
+      <div class="modal-content">
+        <span class="loader"></span>
+        <p>Processing...<br />Please wait while we process your request.</p>
+      </div>
+    </div>
+
+    <script>
+      const aiHostUrl = "http://{{ AI_HOST }}:{{ AI_PORT }}";
+
+      document
+        .getElementById("taskType")
+        .addEventListener("change", function () {
+          const taskType = this.value;
+          const datasetSelect = document.getElementById("dataset");
+          const modelSelect = document.getElementById("model");
+          datasetSelect.disabled = !taskType;
+          modelSelect.disabled = true;
+          datasetSelect.innerHTML = '<option value="">Select Dataset</option>';
+          modelSelect.innerHTML = '<option value="">Select Model</option>';
+
+          if (taskType) {
+            fetch(`/get_datasets?taskType=${taskType}`)
+              .then((response) => response.json())
+              .then((data) => {
+                data.datasets.forEach((dataset) => {
+                  const option = document.createElement("option");
+                  option.value = dataset;
+                  option.textContent = dataset;
+                  datasetSelect.appendChild(option);
+                });
+              });
+          }
+        });
+
+      document
+        .getElementById("dataset")
+        .addEventListener("change", function () {
+          const taskType = document.getElementById("taskType").value;
+          const dataset = this.value;
+          const modelSelect = document.getElementById("model");
+          modelSelect.disabled = !dataset;
+          modelSelect.innerHTML = '<option value="">Select Model</option>';
+
+          if (dataset) {
+            fetch(`/get_models?taskType=${taskType}&dataset=${dataset}`)
+              .then((response) => response.json())
+              .then((data) => {
+                data.models.forEach((model) => {
+                  const option = document.createElement("option");
+                  option.value = model;
+                  option.textContent = model;
+                  modelSelect.appendChild(option);
+                });
+              });
+          }
+        });
+
+      document
+        .getElementById("testFolder")
+        .addEventListener("change", function (event) {
+          const taskType = document.getElementById("taskType").value;
+          const dataset = document.getElementById("dataset").value;
+          const statusMessage = document.getElementById("statusMessage");
+
+          // Check if taskType and dataset are selected
+          if (!taskType || !dataset) {
+            statusMessage.innerHTML =
+              "<p style='color: red;'>Please select task type and dataset before uploading an image.</p>";
+            document.getElementById("predictButton").disabled = true;
+            return;
+          }
+
+          const files = event.target.files;
+          const imagePreview = document.getElementById("imagePreview");
+          const folderPathDisplay = document.getElementById("folderPath");
+          imagePreview.innerHTML = "";
+
+          if (files.length > 0) {
+            folderPathDisplay.textContent =
+              files[0].path || files[0].webkitRelativePath.split("/")[0];
+          } else {
+            folderPathDisplay.textContent = "No files chosen";
+          }
+
+          let validImages = 0;
+          const imageNames = [];
+          Array.from(files).forEach((file) => {
+            if (file.type.startsWith("image/")) {
+              imageNames.push(file.name);
+              const img = document.createElement("img");
+              img.classList.add("image-preview");
+              img.src = URL.createObjectURL(file);
+              img.title = file.name;
+              imagePreview.appendChild(img);
+              validImages++;
+            }
+          });
+
+          if (validImages > 0) {
+            fetch(`/verify_images_in_mapping`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                imageNames,
+                taskType,
+                dataset,
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.missingImages.length > 0) {
+                  statusMessage.innerHTML = `<p style="color: red;">Missing images in mapping.csv: ${data.missingImages.join(
+                    ", "
+                  )}</p>`;
+                  document.getElementById("predictButton").disabled = true;
+                } else {
+                  statusMessage.innerHTML = `<p style="color: green;">Number of images: ${validImages}</p>`;
+                  document.getElementById("predictButton").disabled = false;
+                }
+              });
+          } else {
+            statusMessage.innerHTML =
+              "<p style='color: red;'>No valid images found in the folder. Please try again.</p>";
+            document.getElementById("predictButton").disabled = true;
+          }
+        });
+
+      document
+        .getElementById("clearSelections")
+        .addEventListener("click", function () {
+          document.getElementById("uploadForm").reset();
+          document.getElementById("imagePreview").innerHTML = "";
+          document.getElementById("statusMessage").innerHTML =
+            "<p style='color: red;'>Please select a folder to see image previews and validation messages here.</p>";
+          document.getElementById("predictButton").disabled = true;
+          document.getElementById("folderPath").textContent = "No files chosen";
+        });
+
+      function showSpinner() {
+        document.getElementById("processingModal").style.display = "flex";
+      }
+
+      function hideSpinner() {
+        document.getElementById("processingModal").style.display = "none";
+      }
+
+      document
+        .getElementById("predictButton")
+        .addEventListener("click", async function () {
+          showSpinner();
+
+          requestAnimationFrame(async () => {
+            const formData = new FormData(
+              document.getElementById("uploadForm")
+            );
+
+            try {
+              const response = await fetch(`${aiHostUrl}/predict`, {
+                method: "POST",
+                body: formData,
+              });
+
+              const data = await response.json();
+              console.log("Response data:", data); // Log the response to check its format
+
+              hideSpinner();
+
+              if (data.success) {
+                // Redirect to the folder_result page with the unique_id
+                window.location.href = `/folder_result/${data.unique_id}`;
+              } else {
+                alert("An error occurred. Please try again.");
+              }
+            } catch (error) {
+              hideSpinner();
+              console.error("Error occurred during fetch:", error);
+              alert("An error occurred. Please try again.");
+            }
+          });
+        });
+    </script>
+  </body>
+</html>
