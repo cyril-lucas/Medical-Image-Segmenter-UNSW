@@ -44,6 +44,17 @@ services:
       - ai
     restart: always
 
+  # data_setup:
+  #   build:
+  #     context: ./Dataset_setup
+  #     dockerfile: Dockerfile.data_setup
+  #   container_name: data-setup-service
+  #   volumes:
+  #     - ./shared:/app/shared # Mount the shared directory for data access
+  #   networks:
+  #     - final_code_network
+  #   entrypoint: ["python", "/app/data_setup.py"]
+
 networks:
   final_code_network:
     driver: bridge

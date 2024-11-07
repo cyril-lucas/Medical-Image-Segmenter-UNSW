@@ -129,6 +129,7 @@
 
     <script>
       const aiHostUrl = "http://{{ AI_HOST }}:{{ AI_PORT }}";
+      // let responseData = null; // Variable to hold server response data until timeout completes
 
       // Fetch datasets and models based on selected task and dataset
       document
@@ -298,7 +299,7 @@
             hideSpinner();
 
             if (data.success) {
-              window.location.href = `/image_result/${data.unique_id}`;
+              window.location.href = `/result/${data.unique_id}`;
             } else {
               alert("An error occurred. Please try again.");
             }
@@ -308,6 +309,45 @@
             alert("An error occurred. Please try again.");
           }
         });
+
+      // document
+      //   .getElementById("predictButton")
+      //   .addEventListener("click", async function () {
+      //     showSpinner();
+
+      //     // Set a 30-minute delay before processing the response
+      //     setTimeout(() => {
+      //       hideSpinner();
+
+      //       // If we received a response from the server, process it now
+      //       if (responseData) {
+      //         if (responseData.success) {
+      //           // Redirect to the folder_result page with the unique_id
+      //           window.location.href = `/folder_result/${responseData.unique_id}`;
+      //         } else {
+      //           alert("An error occurred. Please try again.");
+      //         }
+      //       }
+      //     }, 1800000); // 30 minutes in milliseconds
+
+      //     // Send the form data to the server
+      //     const formData = new FormData(document.getElementById("uploadForm"));
+
+      //     try {
+      //       const response = await fetch(`${aiHostUrl}/predict`, {
+      //         method: "POST",
+      //         body: formData,
+      //       });
+
+      //       // Store response data but do not act on it until the 30-minute timer expires
+      //       responseData = await response.json();
+      //       console.log("Response data stored until timeout:", responseData);
+      //     } catch (error) {
+      //       hideSpinner();
+      //       console.error("Error occurred during fetch:", error);
+      //       alert("An error occurred. Please try again.");
+      //     }
+      //   });
     </script>
   </body>
 </html>

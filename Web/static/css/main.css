@@ -190,6 +190,7 @@ body {
   border-radius: 5px;
 }
 
+/* Hint styling above the file inputs */
 .hint {
   font-size: 12px;
   color: #555;
@@ -206,6 +207,10 @@ body {
 
 .status-container .status-message.success {
   color: #4caf50; /* Green for success messages */
+}
+
+.status-message.warning {
+  color: red;
 }
 
 /* Image Preview Area */
@@ -398,4 +403,154 @@ body {
 .drop-zone.dragging {
   background-color: rgba(0, 119, 168, 0.1);
   border-color: #005f80;
+}
+
+/* Additional styling for inline hints and status messages */
+.form-container .hint {
+  display: inline-block;
+  font-size: 12px;
+  color: #555;
+  margin-left: 10px;
+}
+
+.form-container .status-message {
+  display: inline-block;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+/* Align clear button on the top right of the form */
+.clear-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+/* Full-width input styling for uniform width */
+.input-fullwidth {
+  width: 100%;
+  max-width: 400px; /* Adjusts max-width to align with dropdown */
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.specify-task-row {
+  margin-top: -15px;
+}
+
+#custom_task_type {
+  display: none;
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Styling specifically for the form hints */
+.form-hint {
+  display: block;
+  font-size: 13px;
+  color: #6c757d; /* A subtle gray to differentiate hints from main text */
+  margin-top: 5px;
+  margin-bottom: 8px;
+  font-style: italic; /* Optional: add italics for better distinction */
+}
+
+/* img_result */
+/* New translucent container */
+.translucent-container-new {
+  background-color: rgb(255 255 255 / 60%);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  margin-top: 60px;
+  color: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+}
+
+/* Scrollable preview container */
+.preview-container-new {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  background-color: rgb(255 255 255 / 68%);
+  padding: 10px;
+}
+
+/* Image columns styling */
+.image-columns-new,
+.image-row-new {
+  display: flex;
+  color: #252222;
+  justify-content: space-between;
+}
+
+.column-new {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+}
+
+.image-preview-new {
+  max-width: 100%;
+  height: 300px;
+  border-radius: 4px;
+}
+
+/* Fixed score section with 2x3 grid layout */
+.score-section-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  border-radius: 8px;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+}
+
+.scores-new {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-column-gap: 20px; /* Increase gap between columns */
+  grid-row-gap: 15px; /* Add gap between rows for better spacing */
+  padding: 10px;
+  margin-left: 30px;
+  background-color: rgba(255, 255, 255, 0.8); /* Light translucent background */
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+}
+
+.scores-new div {
+  padding: 5px 10px;
+  font-weight: bold;
+  color: #333; /* Darker text color for readability */
+  background-color: #f0f0f0; /* Slight background for each score */
+  border-radius: 4px;
+  text-align: center;
+}
+/* Download button styling */
+.download-button-new {
+  background-color: #0077a8;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 20px;
+}
+
+.download-button-new:hover {
+  background-color: #005f80;
 }

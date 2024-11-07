@@ -1,0 +1,23 @@
+# Dataset_setup/Dockerfile.data_setup
+FROM python:3.9-slim
+
+# Install tk, tcl, and xvfb for virtual display support
+RUN apt-get update && apt-get install -y tk tcl xvfb && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --timeout=120
+
+# Copy the dataset setup script
+COPY . /app
+
+# Define shared volume for data access
+VOLUME /app/shared
+
+# Set DISPLAY environment variable for xvfb
+ENV DISPLAY=:99
+
+# Start xvfb in the background and run the Python script
+CMD xvfb :99 -screen 0 1024x768x16 & python data_setup.py

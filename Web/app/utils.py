@@ -4,6 +4,7 @@ import logging
 import json
 from dotenv import load_dotenv
 import csv
+import re
 
 load_dotenv()
 
@@ -119,3 +120,8 @@ def get_models_by_dataset(task_type, dataset_name):
     if not os.path.isdir(model_folder):
         raise FileNotFoundError(f"Model folder not found at {model_folder}")
     return [f for f in os.listdir(model_folder) if f.endswith((".pt", ".pkl"))]
+
+def extract_id(filename, pattern):
+    """Extract ID from the filename using a regular expression pattern."""
+    match = re.search(pattern, filename)
+    return match.group(1) if match else None

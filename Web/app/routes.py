@@ -2,7 +2,7 @@ import os
 import json
 import pandas as pd
 import requests
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash, send_file, send_from_directory
 from app.utils import (
     setup_logging,
     load_environment,
@@ -11,16 +11,15 @@ from app.utils import (
     get_datasets_by_task,
     get_models_by_dataset,
     verify_images_in_mapping,
-    get_model_list,
-    get_dataset_list
+    extract_id,
 )
+# from addon.data_setup import process_data_setup_form
 from datetime import datetime
-
+from fpdf import FPDF
 
 
 main = Blueprint('main', __name__)
 logger = setup_logging()
-# Load environment and check paths
 load_environment()
 check_essential_paths(logger)
 
@@ -75,6 +74,40 @@ def verify_images_in_mapping():
         return jsonify({"error": "Mapping file not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# @main.route('/data_setup', methods=['GET', 'POST'])
+# def data_setup():
+#     json_file = os.path.join(os.getenv("APP_DATA_PATH"), "data_record.json")
+
+#     if request.method == 'POST':
+#         task_type = request.form.get('taskType')
+#         dataset_name = request.form.get('datasetName')
+#         model_files = request.files.getlist('modelFiles')
+#         test_images = request.files.getlist('testImages')
+#         ground_truth_images = request.files.getlist('groundTruthImages')
+
+#         logger.info("Received POST request for data setup")
+#         logger.debug(f"Task Type: {task_type}")
+#         logger.debug(f"Dataset Name: {dataset_name}")
+#         logger.debug(f"Model Files: {[f.filename for f in model_files]}")
+#         logger.debug(f"Test Images: {[f.filename for f in test_images]}")
+#         logger.debug(f"Ground Truth Images: {[f.filename for f in ground_truth_images]}")
+
+#         # Process the form and capture any error messages
+#         try:
+#             result_message = process_data_setup_form(
+#                 task_type, dataset_name, model_files, test_images, ground_truth_images, json_file
+#             )
+#             logger.info("Data setup processing completed")
+#             flash(result_message)
+#         except Exception as e:
+#             logger.error("An error occurred during data setup processing", exc_info=True)
+#             flash(f"Error: {str(e)}")
+        
+#         return redirect(url_for('main.data_setup'))
+
+#     task_types = ["Skin_Lesion", "Multi-Organ_Segmentation", "Other"]
+#     return render_template('data_setup.html', task_types=task_types)
 
 @main.route("/folder_upload", methods=["GET", "POST"])
 def folder_upload():
@@ -129,7 +162,7 @@ def folder_upload():
                 
                 if response.status_code == 200 and response_data.get('success'):
                     unique_id = response_data['unique_id']
-                    return redirect(url_for('main.folder_result', unique_id=unique_id))
+                    return redirect(url_for('main.result', unique_id=unique_id))
                 else:
                     flash("An error occurred while processing your request.", "error")
             except ValueError as json_error:
@@ -145,23 +178,23 @@ def folder_upload():
 
     return render_template("folder_upload.html", task_types=task_types, datasets=datasets, models=models, AI_HOST=ai_host, AI_PORT=ai_port)
 
-@main.route("/folder_result/<unique_id>")
-def folder_result(unique_id):
-    """Render the result page displaying records for a specific unique_id from result_record.json."""
-    result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
-    record = {}
+# @main.route("/folder_result/<unique_id>")
+# def folder_result(unique_id):
+#     """Render the result page displaying records for a specific unique_id from result_record.json."""
+#     result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
+#     record = {}
 
-    # Load data from result_record.json for the given unique_id
-    if os.path.exists(result_record_path):
-        with open(result_record_path, "r") as f:
-            data = json.load(f)
-            record = next((item for item in data if item["Unique ID"] == unique_id), {})
+#     # Load data from result_record.json for the given unique_id
+#     if os.path.exists(result_record_path):
+#         with open(result_record_path, "r") as f:
+#             data = json.load(f)
+#             record = next((item for item in data if item["Unique ID"] == unique_id), {})
 
-    if not record:
-        flash("No result found for the specified ID.", "error")
-        return redirect(url_for('main.index'))
+#     if not record:
+#         flash("No result found for the specified ID.", "error")
+#         return redirect(url_for('main.index'))
 
-    return render_template("folder_result.html", record=record)
+#     return render_template("folder_result.html", record=record)
 
 
 @main.route("/img_upload", methods=["GET", "POST"])
@@ -216,7 +249,7 @@ def img_upload():
                 
                 if response.status_code == 200 and response_data.get('success'):
                     unique_id = response_data['unique_id']
-                    return redirect(url_for('main.img_result', unique_id=unique_id))
+                    return redirect(url_for('main.result', unique_id=unique_id))
                 else:
                     flash("An error occurred while processing your request.", "error")
             except ValueError as json_error:
@@ -233,20 +266,195 @@ def img_upload():
     return render_template("img_upload.html", task_types=task_types, datasets=datasets, models=models, AI_HOST=ai_host, AI_PORT=ai_port)
 
 
-@main.route("/img_result/<unique_id>")
-def img_result(unique_id):
-    """Render the result page displaying records for a specific unique_id from result_record.json."""
-    result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
-    record = {}
+# @main.route("/img_result/<unique_id>")
+# def img_result(unique_id):
+#     """Render the result page displaying records for a specific unique_id from result_record.json."""
+#     result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
+#     record = {}
 
-    # Load data from result_record.json for the given unique_id
-    if os.path.exists(result_record_path):
-        with open(result_record_path, "r") as f:
-            data = json.load(f)
-            record = next((item for item in data if item["Unique ID"] == unique_id), {})
+#     # Load data from result_record.json for the given unique_id
+#     if os.path.exists(result_record_path):
+#         with open(result_record_path, "r") as f:
+#             data = json.load(f)
+#             record = next((item for item in data if item["Unique ID"] == unique_id), {})
 
-    if not record:
-        flash("No result found for the specified ID.", "error")
-        return redirect(url_for('main.index'))
+#     if not record:
+#         flash("No result found for the specified ID.", "error")
+#         return redirect(url_for('main.index'))
 
-    return render_template("img_result.html", record=record)
+#     return render_template("img_result.html", record=record)
+
+
+@main.route('/result/<result_id>')
+def result(result_id):
+    RESULT_PATH = os.getenv("APP_RESULT_PATH", "/shared/result")
+    RESULT_JSON_PATH = os.path.join(RESULT_PATH, "result_record.json")
+
+    with open(RESULT_JSON_PATH, "r") as f:
+        results = json.load(f)
+
+    # Find the result entry with the specified result_id
+    result = next((r for r in results if r["Unique ID"] == result_id), None)
+    if not result:
+        return "Result not found", 404
+    
+    # Get paths for images based on the matched IDs
+    test_images = {
+        extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/test_folder/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
+    }
+    ground_truth_images = {
+        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): f"{result_id}/ground_truth/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/ground_truth")
+    }
+    sampled_images = {
+        extract_id(file, r"(\d+)_output_ens\.jpg"): f"{result_id}/sampled/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/sampled")
+    }
+
+    # Align images by matching IDs
+    matched_images = [
+        {
+            "test_image": url_for('main.serve_result_file', subpath=test_images[img_id]),
+            "ground_truth_image": url_for('main.serve_result_file', subpath=ground_truth_images[img_id]),
+            "sampled_image": url_for('main.serve_result_file', subpath=sampled_images[img_id])
+        }
+        for img_id in test_images
+        if img_id in ground_truth_images and img_id in sampled_images
+    ]
+
+    # Pass matched images and scores to the template
+    return render_template(
+        "result.html",
+        matched_images=matched_images,
+        scores={
+            "F1_Score": result.get("F1_Score"),
+            "Specificity": result.get("Specificity"),
+            "Sensitivity": result.get("Sensitivity"),
+            "Accuracy": result.get("Accuracy"),
+            "Dice_Score": result.get("Dice_Score"),
+            "IoU": result.get("IoU")
+        },
+        result_id=result_id
+    )
+
+
+
+@main.route('/download_pdf/<result_id>')
+def download_pdf(result_id):
+    RESULT_PATH = os.getenv("APP_RESULT_PATH", "/shared/result")
+    RESULT_JSON_PATH = os.path.join(RESULT_PATH, "result_record.json")
+    
+    # Read result_record.json within the download_pdf route
+    with open(RESULT_JSON_PATH, "r") as f:
+        results = json.load(f)
+
+    result = next((r for r in results if r["Unique ID"] == result_id), None)
+    if not result:
+        return "Result not found", 404
+
+    # Paths to local image files
+    test_images = {
+        extract_id(file, r"ISIC_(\d+)\.jpg"): os.path.join(RESULT_PATH, result_id, "test_folder", file)
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
+    }
+    ground_truth_images = {
+        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): os.path.join(RESULT_PATH, result_id, "ground_truth", file)
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/ground_truth")
+    }
+    sampled_images = {
+        extract_id(file, r"(\d+)_output_ens\.jpg"): os.path.join(RESULT_PATH, result_id, "sampled", file)
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/sampled")
+    }
+
+    # Align images by matching IDs
+    matched_images = [
+        {
+            "test_image": test_images[img_id],
+            "ground_truth_image": ground_truth_images[img_id],
+            "sampled_image": sampled_images[img_id]
+        }
+        for img_id in test_images
+        if img_id in ground_truth_images and img_id in sampled_images
+    ]
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_left_margin(15)
+    pdf.set_right_margin(15)
+    pdf.set_font("Arial", "B", 14)
+
+    # Title for Scores Section
+    pdf.cell(0, 10, "Segmentation Scores", ln=True, align="C")
+    pdf.ln(5)
+    
+    # Center the table on the page
+    table_x = (210 - 80) / 2  # Center the 80mm wide table on an A4 page (210mm wide)
+    pdf.set_xy(table_x, pdf.get_y())
+
+    # Create table headers
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(40, 10, "Metric", border=1, align="C")
+    pdf.cell(40, 10, "Score", border=1, align="C")
+    pdf.ln()
+
+    # Table content
+    pdf.set_font("Arial", "", 12)
+    score_keys = ["F1_Score", "Specificity", "Sensitivity", "Accuracy", "Dice_Score", "IoU"]
+    for key in score_keys:
+        pdf.set_x(table_x)
+        pdf.cell(40, 10, key, border=1, align="C")
+        pdf.cell(40, 10, str(result.get(key, 'N/A')), border=1, align="C")
+        pdf.ln()  # Move to the next row
+
+    pdf.ln(10)  # Add space below the scores section
+
+    # Image Table Section Title
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Detailed Comparison", ln=True, align="C")
+    pdf.set_font("Arial", "B", 12)
+    
+    # Adjusted Table Headers for Images
+    headers = ["Test Image", "Ground Truth", "Sampled Image"]
+    cell_width = 60  # Slightly larger width to center the table
+    for header in headers:
+        pdf.cell(cell_width, 10, header, border=1, align="C")
+    pdf.ln()  # Move to the next row
+
+    # Image Rows
+    pdf.set_font("Arial", "", 10)
+    padding = 5  # Padding around each image
+    image_height = 60  # Reduced image height to fit with padding
+    for images in matched_images:
+        # Check if a new page is needed for the next row
+        if pdf.get_y() + image_height + 2 * padding > pdf.page_break_trigger:
+            pdf.add_page()
+            # Reprint the header row on the new page
+            for header in headers:
+                pdf.cell(cell_width, 10, header, border=1, align="C")
+            pdf.ln()  # Move to the next row
+
+        y_start = pdf.get_y()  # Starting y position for images in the row
+
+        # Reserve space for each image and add them using specific coordinates
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Test Image
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Ground Truth
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Sampled Image
+        pdf.ln()  # Move to the next row
+
+        # Adjust x and y coordinates for each image to center them within cells
+        x_start = 15  # Left margin offset to ensure images stay within page
+        pdf.image(images["test_image"], x=x_start + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
+        pdf.image(images["ground_truth_image"], x=x_start + cell_width + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
+        pdf.image(images["sampled_image"], x=x_start + 2 * cell_width + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
+
+    # Save and return the PDF
+    pdf_file_path = f"/tmp/Segmentation_Result_{result_id}.pdf"
+    pdf.output(pdf_file_path)
+    return send_file(pdf_file_path, as_attachment=True, download_name=f"Segmentation_Result_{result_id}.pdf")
+
+@main.route('/shared/result/<path:subpath>')
+def serve_result_file(subpath):
+    result_path = os.getenv("APP_RESULT_PATH", "/shared/result")
+    return send_from_directory(result_path, subpath)

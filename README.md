@@ -50,39 +50,9 @@ TO DO
 --- store ground truth in AI/data/ground_truth/dataset_Name(ISIC)/
 
 RUN Method
-docker-compose up --build
+Reset docker : docker system prune -a --volumes
+Start Docker : docker-compose up --build
+Stop Docker : docker-compose down
+Setup Dataset: docker-compose run data_setup
 
-docker-compose down
-
-FINAL_CODE
-├── AI
-│ ├── app.py # Main script for the AI service
-│ ├── Dockerfile # Dockerfile for building the AI service
-│ └── requirements.txt # Dependencies for AI service
-├── Web
-│ ├── app # Flask app directory
-│ ├── Dockerfile # Dockerfile for building the Web service
-│ └── requirements.txt # Dependencies for Web service
-├── shared
-│ ├── data # Centralized data directory for uploads, ground truth, results
-│ │ ├── ground_truth # Ground truth images for datasets
-│ │ ├── result # Result folders created per unique upload
-│ │ ├── upload_log.csv # CSV log of uploads
-│ │ └── metrics_results.csv # Additional metrics (if needed)
-│ ├── model # Model directory shared between services
-│ └── logs # Centralized log directory
-│ └── app.log # Main log file for both services
-├── docker-compose.yml # Docker Compose file for both services
-└── .env # Environment configuration file
-
-Setup dataset
-cd Dataset_setup
-pip install -r requirements.txt
-python data_setup.py
-
-Docker setup
-docker system prune -a --volumes
-docker-compose down  
- docker-compose up --build
-
-first docker setup will take couple of minutes
+"GET /img_result/6043455593
