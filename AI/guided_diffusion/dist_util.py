@@ -7,35 +7,38 @@ import os
 import socket
 
 import blobfile as bf
-#from mpi4py import MPI
 import torch as th
 import torch.distributed as dist
 
 # Change this to reflect your cluster layout.
 # The GPU for a given rank is (rank % GPUS_PER_NODE).
 GPUS_PER_NODE = 8
-
 SETUP_RETRY_COUNT = 3
+
 
 def setup_dist(args):
     """
-    Setup a distributed process group if multi-GPU is requested.
+    Setup a distributed process group.
     """
-    if not args.multi_gpu:
-        return  # Skip if not multi-GPU
 
-    if dist.is_initialized():
-        return
-    if not args.multi_gpu:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_dev
-    backend = "gloo"  # Force using gloo for multi-CPU/GPU
+    print("Distributed training is disabled.")
 
-    os.environ["MASTER_ADDR"] = '127.0.1.1'
-    os.environ["MASTER_PORT"] = '29500'
-    os.environ["RANK"] = '0'
-    os.environ["WORLD_SIZE"] = '1'
+    # if dist.is_initialized():
+    #     return
 
-    dist.init_process_group(backend=backend, init_method="env://")
+    # # Set CUDA devices if multi-GPU is not specified
+    # if not args.multi_gpu:
+    #     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_dev
+
+    # # Force the use of "gloo" backend, as "nccl" and libuv are not supported in this environment
+    # backend = "gloo"
+    # os.environ["MASTER_ADDR"] = "127.0.0.1"
+    # os.environ["RANK"] = os.getenv("RANK", "0")
+    # os.environ["WORLD_SIZE"] = os.getenv("WORLD_SIZE", "1")
+    # os.environ["MASTER_PORT"] = str(_find_free_port())
+    
+    # # Initialize the process group
+    # dist.init_process_group(backend=backend, init_method="env://")
 
 
 def dev():
@@ -43,7 +46,7 @@ def dev():
     Get the device to use for torch.distributed.
     """
     if th.cuda.is_available():
-        return th.device(f"cuda")
+        return th.device("cuda")
     return th.device("cpu")
 
 
@@ -51,14 +54,14 @@ def load_state_dict(path, **kwargs):
     """
     Load a PyTorch file without redundant fetches across MPI ranks.
     """
-    mpigetrank=0
-    if mpigetrank==0:
+    mpigetrank = 0  # Set to 0 since MPI is not used here
+    if mpigetrank == 0:
         with bf.BlobFile(path, "rb") as f:
             data = f.read()
     else:
         data = None
     
-    return th.load(io.BytesIO(data), **kwargs)
+    return th.load(io.BytesIO(data), weights_only=True, **kwargs)
 
 
 def sync_params(params):
@@ -71,10 +74,12 @@ def sync_params(params):
 
 
 def _find_free_port():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-    finally:
-        s.close()
+    """
+    Find an available port for distributed communication.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    port = s.getsockname()[1]
+    s.close()
+    return port

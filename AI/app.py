@@ -2,9 +2,12 @@ import os
 import json
 import logging
 import shutil
+import subprocess
 from flask import Flask, request, jsonify
 import random
 from flask_cors import CORS
+import csv
+
 
 app = Flask(__name__)
 CORS(app) 
@@ -53,44 +56,60 @@ def predict():
     # Generate unique ID and create result directory
     unique_id = generate_unique_id()
     result_dir = os.path.join(os.getenv("APP_RESULT_PATH", "/shared/result"), unique_id)
-    test_folder_dir = os.path.join(result_dir, "test_folder")
-    ground_truth_dir = os.path.join(result_dir, "ground_truth")
+    test_folder_dir = os.path.join(result_dir, "Test_images")
+    ground_truth_dir = os.path.join(result_dir, "Ground_truth")
     model_dir = os.path.join(result_dir, "model")
+    sampled_dir = os.path.join(result_dir, "sampled")
     logger.info(f"unique_id: {unique_id}")
 
     # Create necessary directories
     os.makedirs(test_folder_dir, exist_ok=True)
     os.makedirs(ground_truth_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(sampled_dir, exist_ok=True)
+
 
     # Save uploaded file(s)
     for file in test_files:
         file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))  # Get only the filename
         file.save(file_path)
 
+
+
     # Load and process mapping file if it exists
     mapping_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "mapping.csv")
+    filtered_mapping_path = os.path.join(result_dir, "mapping.csv")
+    # Check if the mapping file exists
     if os.path.exists(mapping_path):
-        with open(mapping_path, "r") as mapping_file:
-            # Skip header row
-            next(mapping_file)
+        # Open the original mapping file and the filtered output file
+        with open(mapping_path, "r") as mapping_file, open(filtered_mapping_path, "w", newline="") as filtered_file:
+            reader = csv.reader(mapping_file)
+            writer = csv.writer(filtered_file)
+            
+            # Define the expected header and write it to the filtered file
+            header = ["#", "image_name", "test_images", "ground_truth"]
+            writer.writerow(header)
 
-            # Set of base filenames of uploaded files
+            # Create a set of uploaded image filenames without paths (e.g., {"ISIC_0012169.jpg", "ISIC_0012236.jpg"})
             uploaded_filenames = {os.path.basename(file.filename) for file in test_files}
             
-            # Process each line in the CSV
-            for line in mapping_file:
-                _, image_name, _, ground_truth_path = line.strip().split(",")
-                ground_truth_image_name = os.path.basename(ground_truth_path)
+            # Skip the header of the original mapping file
+            next(reader)
+            
+            # Process each row in the original mapping file
+            for row in reader:
+                _, image_name, test_image_path, ground_truth_path = row
 
-                # Check if the uploaded file has a matching ground truth image
+                # Check if the image_name is in the set of uploaded filenames
                 if image_name in uploaded_filenames:
-                    # Construct the absolute path for the ground truth source and destination
+                    # Copy the ground truth image to the destination directory
+                    ground_truth_image_name = os.path.basename(ground_truth_path)
                     source_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, ground_truth_path)
                     dest_path = os.path.join(ground_truth_dir, ground_truth_image_name)
-
-                    # Copy the ground truth image to the destination directory
                     shutil.copy(source_path, dest_path)
+
+                    # Write the matching row to the filtered mapping file
+                    writer.writerow(row)
     else:
         logger.error(f"Mapping file not found at {mapping_path}")
         return jsonify({"error": "Mapping file not found"}), 404
@@ -102,6 +121,45 @@ def predict():
     else:
         logger.error(f"Model file not found at {model_source_path}")
         return jsonify({"error": "Model file not found"}), 404
+    
+
+   # Run segmentation_sample.py with dynamically passed arguments
+    sample_process = subprocess.run([
+        "python", "scripts/segmentation_sample.py",
+        "--data_name", dataset_name,
+        "--data_dir", result_dir,
+        "--out_dir", sampled_dir,
+        "--model_path", os.path.join(model_dir, model_name)
+    ])
+
+    # Check if segmentation_sample.py ran successfully
+    if sample_process.returncode == 0:
+        # Run segmentation_eval.py and capture the output if sampling was successful
+        eval_output = subprocess.check_output([
+            "python", "scripts/segmentation_eval.py",
+            "--inp_pth", sampled_dir,
+            "--out_pth", ground_truth_dir
+        ], text=True)
+    else:
+        # Log an error if segmentation_sample.py failed
+        logger.error("segmentation_sample.py failed to execute successfully. Skipping segmentation_eval.py.")
+        return jsonify({"error": "segmentation_sample.py failed to execute successfully."}), 500
+
+    # Parse the metrics from the output of segmentation_eval.py
+    metrics = {}
+    for line in eval_output.strip().splitlines():
+        if line.startswith("IoU:"):
+            metrics["IoU"] = round(float(line.split(":")[1].strip()), 5)
+        elif line.startswith("Dice Coefficient:"):
+            metrics["Dice Score"] = round(float(line.split(":")[1].strip()), 5)
+        elif line.startswith("Accuracy:"):
+            metrics["Accuracy"] = round(float(line.split(":")[1].strip()), 5)
+        elif line.startswith("Sensitivity:"):
+            metrics["Sensitivity"] = round(float(line.split(":")[1].strip()), 5)
+        elif line.startswith("Specificity:"):
+            metrics["Specificity"] = round(float(line.split(":")[1].strip()), 5)
+        elif line.startswith("F1 Score:"):
+            metrics["F1 Score"] = round(float(line.split(":")[1].strip()), 5)
 
     # Prepare JSON data for the result record
     json_data = {
@@ -110,7 +168,10 @@ def predict():
         "Test_image": test_folder_dir,
         "ground_truth": ground_truth_dir,
         "Dataset Name": dataset_name,
-        "Model": model_source_path
+        "Model": model_source_path,
+        "sampled_path": sampled_dir,
+        **metrics  # Add the parsed metrics to the JSON data
+
     }
 
     # Append to result_record.json or create it if it doesn't exist

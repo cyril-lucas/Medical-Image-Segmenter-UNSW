@@ -1,66 +1,44 @@
 import os
-import sys
-import pickle
-import cv2
-from skimage import io
-import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
+from PIL import Image
 import torch
 from torch.utils.data import Dataset
-from PIL import Image
-import torchvision.transforms.functional as F
-import torchvision.transforms as transforms
-import pandas as pd
-from skimage.transform import rotate
-
 
 class ISICDataset(Dataset):
-    def __init__(self, args, data_path , transform = None, mode = 'Training',plane = False):
+    def __init__(self, args, data_path, transform=None):
 
-
-        # df = pd.read_csv(os.path.join(data_path, 'ISBI2016_ISIC_Part1_' + mode + '_GroundTruth.csv'), encoding='gbk')
-        # Normalize the data path to ensure proper separators
-        data_path = os.path.normpath(data_path)
+        # Load mapping.csv to get image and ground truth paths
+        mapping_file = os.path.join(data_path, 'mapping.csv')
+        df = pd.read_csv(mapping_file)
         
-        # Join the path properly using os.path.join()
-        csv_path = os.path.join(data_path, f'ISBI2016_ISIC_Part1_{mode}_GroundTruth2.csv')
+        # Extract the image and ground truth file paths
+        self.image_paths = df['test_images'].apply(lambda x: os.path.join(data_path, x)).tolist()
+        self.mask_paths = df['ground_truth'].apply(lambda x: os.path.join(data_path, x)).tolist()
         
-        # Normalize the final CSV path to ensure consistency
-        csv_path = os.path.normpath(csv_path)
-        
-        # Read the CSV file
-        df = pd.read_csv(csv_path, encoding='gbk')
-        self.name_list = df.iloc[:,1].tolist()
-        self.label_list = df.iloc[:,2].tolist()
-        self.data_path = data_path
-        self.mode = mode
-
+        # Store transform and data path
         self.transform = transform
 
     def __len__(self):
-        return len(self.name_list)
+        return len(self.image_paths)
 
     def __getitem__(self, index):
-        """Get the images"""
-        name = self.name_list[index]
-        img_path = os.path.join(self.data_path, name)
-        
-        mask_name = self.label_list[index]
-        msk_path = os.path.join(self.data_path, mask_name)
 
+        img_path = self.image_paths[index]
+        msk_path = self.mask_paths[index]
+
+        # Load image and mask
         img = Image.open(img_path).convert('RGB')
         mask = Image.open(msk_path).convert('L')
 
-        # if self.mode == 'Training':
-        #     label = 0 if self.label_list[index] == 'benign' else 1
-        # else:
-        #     label = int(self.label_list[index])
-
+        # Apply transformations, if specified
         if self.transform:
+            # Apply the same random transformations to both the image and mask
             state = torch.get_rng_state()
             img = self.transform(img)
             torch.set_rng_state(state)
             mask = self.transform(mask)
 
+        # Extract image name for reference
+        name = os.path.basename(img_path)
 
         return (img, mask, name)

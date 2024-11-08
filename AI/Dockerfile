@@ -4,6 +4,7 @@ FROM python:3.9-slim
 # Set environment variables for non-buffered output and no .pyc files
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app/AI:$PYTHONPATH 
 
 # Define build arguments for port
 ARG AI_PORT
