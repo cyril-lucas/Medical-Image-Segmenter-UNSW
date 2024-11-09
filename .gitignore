@@ -8,5 +8,9 @@ shared/result/*
 !shared/logs/.gitkeep
 !shared/result/.gitkeep
 
+# Ignore compiled Python files
+__pycache__/
 
+# Ignore other specific files
 Key_fix.txt
+addon/

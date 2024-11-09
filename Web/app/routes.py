@@ -300,12 +300,12 @@ def result(result_id):
     
     # Get paths for images based on the matched IDs
     test_images = {
-        extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/test_folder/{file}"
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
+        extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/Test_images/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Test_images")
     }
     ground_truth_images = {
-        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): f"{result_id}/ground_truth/{file}"
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/ground_truth")
+        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): f"{result_id}/Ground_truth/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Ground_truth")
     }
     sampled_images = {
         extract_id(file, r"(\d+)_output_ens\.jpg"): f"{result_id}/sampled/{file}"
@@ -355,8 +355,8 @@ def download_pdf(result_id):
 
     # Paths to local image files
     test_images = {
-        extract_id(file, r"ISIC_(\d+)\.jpg"): os.path.join(RESULT_PATH, result_id, "test_folder", file)
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
+        extract_id(file, r"ISIC_(\d+)\.jpg"): os.path.join(RESULT_PATH, result_id, "Test_images", file)
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Test_images")
     }
     ground_truth_images = {
         extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): os.path.join(RESULT_PATH, result_id, "ground_truth", file)

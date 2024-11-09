@@ -123,43 +123,43 @@ def predict():
         return jsonify({"error": "Model file not found"}), 404
     
 
-   # Run segmentation_sample.py with dynamically passed arguments
-    sample_process = subprocess.run([
-        "python", "scripts/segmentation_sample.py",
-        "--data_name", dataset_name,
-        "--data_dir", result_dir,
-        "--out_dir", sampled_dir,
-        "--model_path", os.path.join(model_dir, model_name)
-    ])
+#    # Run segmentation_sample.py with dynamically passed arguments
+#     sample_process = subprocess.run([
+#         "python", "scripts/segmentation_sample.py",
+#         "--data_name", dataset_name,
+#         "--data_dir", result_dir,
+#         "--out_dir", sampled_dir,
+#         "--model_path", os.path.join(model_dir, model_name)
+#     ])
 
-    # Check if segmentation_sample.py ran successfully
-    if sample_process.returncode == 0:
-        # Run segmentation_eval.py and capture the output if sampling was successful
-        eval_output = subprocess.check_output([
-            "python", "scripts/segmentation_eval.py",
-            "--inp_pth", sampled_dir,
-            "--out_pth", ground_truth_dir
-        ], text=True)
-    else:
-        # Log an error if segmentation_sample.py failed
-        logger.error("segmentation_sample.py failed to execute successfully. Skipping segmentation_eval.py.")
-        return jsonify({"error": "segmentation_sample.py failed to execute successfully."}), 500
+#     # Check if segmentation_sample.py ran successfully
+#     if sample_process.returncode == 0:
+#         # Run segmentation_eval.py and capture the output if sampling was successful
+#         eval_output = subprocess.check_output([
+#             "python", "scripts/segmentation_eval.py",
+#             "--inp_pth", sampled_dir,
+#             "--out_pth", ground_truth_dir
+#         ], text=True)
+#     else:
+#         # Log an error if segmentation_sample.py failed
+#         logger.error("segmentation_sample.py failed to execute successfully. Skipping segmentation_eval.py.")
+#         return jsonify({"error": "segmentation_sample.py failed to execute successfully."}), 500
 
-    # Parse the metrics from the output of segmentation_eval.py
-    metrics = {}
-    for line in eval_output.strip().splitlines():
-        if line.startswith("IoU:"):
-            metrics["IoU"] = round(float(line.split(":")[1].strip()), 5)
-        elif line.startswith("Dice Coefficient:"):
-            metrics["Dice Score"] = round(float(line.split(":")[1].strip()), 5)
-        elif line.startswith("Accuracy:"):
-            metrics["Accuracy"] = round(float(line.split(":")[1].strip()), 5)
-        elif line.startswith("Sensitivity:"):
-            metrics["Sensitivity"] = round(float(line.split(":")[1].strip()), 5)
-        elif line.startswith("Specificity:"):
-            metrics["Specificity"] = round(float(line.split(":")[1].strip()), 5)
-        elif line.startswith("F1 Score:"):
-            metrics["F1 Score"] = round(float(line.split(":")[1].strip()), 5)
+#     # Parse the metrics from the output of segmentation_eval.py
+#     metrics = {}
+#     for line in eval_output.strip().splitlines():
+#         if line.startswith("IoU:"):
+#             metrics["IoU"] = round(float(line.split(":")[1].strip()), 5)
+#         elif line.startswith("Dice Coefficient:"):
+#             metrics["Dice Score"] = round(float(line.split(":")[1].strip()), 5)
+#         elif line.startswith("Accuracy:"):
+#             metrics["Accuracy"] = round(float(line.split(":")[1].strip()), 5)
+#         elif line.startswith("Sensitivity:"):
+#             metrics["Sensitivity"] = round(float(line.split(":")[1].strip()), 5)
+#         elif line.startswith("Specificity:"):
+#             metrics["Specificity"] = round(float(line.split(":")[1].strip()), 5)
+#         elif line.startswith("F1 Score:"):
+#             metrics["F1 Score"] = round(float(line.split(":")[1].strip()), 5)
 
     # Prepare JSON data for the result record
     json_data = {
@@ -170,7 +170,7 @@ def predict():
         "Dataset Name": dataset_name,
         "Model": model_source_path,
         "sampled_path": sampled_dir,
-        **metrics  # Add the parsed metrics to the JSON data
+        # **metrics  # Add the parsed metrics to the JSON data
 
     }
 
