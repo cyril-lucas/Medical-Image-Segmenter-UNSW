@@ -13,7 +13,7 @@ from app.utils import (
     verify_images_in_mapping,
     extract_id,
 )
-# from addon.data_setup import process_data_setup_form
+from app.data_setup import process_dataset_form  # Assuming process_data_setup_form exists in addon/data_setup.py
 from datetime import datetime
 from fpdf import FPDF
 
@@ -75,6 +75,25 @@ def verify_images_in_mapping():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+
+@main.route('/datasetup', methods=['GET', 'POST'])
+def datasetup():
+    message = ""
+    if request.method == 'POST':
+        # Extract form data
+        task_type = request.form.get('taskType')
+        dataset_name = request.form.get('datasetName')
+        model_files = request.files.getlist('modelFiles')
+        test_images = request.files.getlist('testImages')
+        ground_truth_images = request.files.getlist('groundTruthImages')
+        
+        # Pass data to process function and get response
+        success, message = process_dataset_form(task_type, dataset_name, model_files, test_images, ground_truth_images)
+        
+    # Render the template with an inline message
+    return render_template('data_setup.html', message=message)
+
 # @main.route('/data_setup', methods=['GET', 'POST'])
 # def data_setup():
 #     json_file = os.path.join(os.getenv("APP_DATA_PATH"), "data_record.json")

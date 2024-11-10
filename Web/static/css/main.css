@@ -554,3 +554,44 @@ body {
 .download-button-new:hover {
   background-color: #005f80;
 }
+
+/* Styles for hiding and showing elements */
+.hidden {
+  display: none;
+}
+
+/* Status messages for red and green feedback */
+.status-message,
+.file-count {
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.file-count.red {
+  color: #d9534f;
+}
+
+.file-count.green {
+  color: #5cb85c;
+}
+
+/* Styles for success and error messages */
+.message-box {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.message-box.success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.message-box.error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}

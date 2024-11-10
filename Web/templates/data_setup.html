@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Setup - Potatoes Medical Image Segmenter</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='images/favicon.ico') }}"
+    />
+  </head>
+  <body>
+    <!-- Navigation Bar -->
+    <div class="header-tab">
+      <div class="title-container">
+        <span class="title">Potatoes Medical Image Segmenter</span>
+      </div>
+      <div class="nav-links">
+        <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.datasetup') }}" class="header-link"
+          >Setup Dataset</a
+        >
+        <a href="{{ url_for('main.img_upload') }}" class="header-link"
+          >Segment Image</a
+        >
+        <a href="{{ url_for('main.folder_upload') }}" class="header-link"
+          >Segment Folder</a
+        >
+      </div>
+    </div>
+
+    <!-- Main Form Section -->
+    <div class="container">
+      <h2>Setup Dataset</h2>
+      <div class="container translucent-container">
+        <!-- Inline Message Display -->
+        {% if message %}
+        <div
+          class="message-box {{ 'success' if 'successfully' in message else 'error' }}"
+        >
+          <p>{{ message }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Dataset setup form -->
+        <form
+          id="dataSetupForm"
+          action="{{ url_for('main.datasetup') }}"
+          method="POST"
+          enctype="multipart/form-data"
+          class="form-container"
+          onsubmit="showProcessingModal(event)"
+        >
+          <!-- Task Type Selection -->
+          <div class="form-row">
+            <label for="task_type">Task Type:</label>
+            <select
+              id="task_type"
+              name="taskType"
+              required
+              onchange="checkOtherTaskType()"
+              class="input-fullwidth"
+            >
+              <option value="Skin_Lesion">Skin Lesion</option>
+              <option value="Multi-Organ_Segmentation">
+                Multi-Organ Segmentation
+              </option>
+              <option value="Other">Other</option>
+            </select>
+            <input
+              type="text"
+              id="custom_task_type"
+              name="custom_task_type"
+              placeholder="Specify Task Type"
+              class="input-fullwidth hidden"
+            />
+          </div>
+
+          <!-- Dataset Name -->
+          <div class="form-row">
+            <label for="dataset_name">Dataset Name:</label>
+            <input
+              type="text"
+              id="dataset_name"
+              name="datasetName"
+              required
+              class="input-fullwidth"
+            />
+          </div>
+
+          <!-- Model Files Upload -->
+          <div class="form-row">
+            <label for="model_files">Model Files:</label>
+            <span class="form-hint">Hint: .pt, .pth, .pkl files</span>
+            <input
+              type="file"
+              id="model_files"
+              name="modelFiles"
+              accept=".pt,.pth,.pkl"
+              multiple
+              required
+              onchange="validateModelFiles()"
+            />
+            <span id="modelFilesCount" class="file-count"></span>
+          </div>
+
+          <!-- Test Images Folder -->
+          <div class="form-row">
+            <label for="test_images">Test Images Folder:</label>
+            <span class="form-hint"
+              >Format: {dataset_name}_{image_id}.jpg or .png</span
+            >
+            <input
+              type="file"
+              id="test_images"
+              name="testImages"
+              webkitdirectory
+              directory
+              required
+              onchange="validateTestImages()"
+            />
+            <span id="testImagesCount" class="file-count"></span>
+          </div>
+
+          <!-- Ground Truth Images Folder -->
+          <div class="form-row">
+            <label for="ground_truth">Ground Truth Images Folder:</label>
+            <span class="form-hint"
+              >Format: {dataset_name}_{image_id}_Segmentation.png or .jpg</span
+            >
+            <input
+              type="file"
+              id="ground_truth"
+              name="groundTruthImages"
+              webkitdirectory
+              directory
+              required
+              onchange="validateGroundTruthImages()"
+            />
+            <span id="groundTruthImagesCount" class="file-count"></span>
+          </div>
+
+          <!-- Submit and Reset Buttons -->
+          <button type="submit" id="submitBtn" class="predict-button" disabled>
+            Submit
+          </button>
+          <button type="reset" class="clear-button" onclick="resetForm()">
+            Clear Form
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal">
+      <div class="modal-content">
+        <span class="loader"></span>
+        <p id="modalMessage">
+          Processing...<br />Please wait while we update the dataset.
+        </p>
+        <button onclick="closeModal()" class="close-modal-button">Close</button>
+      </div>
+    </div>
+
+    <!-- JavaScript Functions -->
+    <script>
+      function checkOtherTaskType() {
+        const taskTypeSelect = document.getElementById("task_type");
+        const customTaskType = document.getElementById("custom_task_type");
+        customTaskType.classList.toggle(
+          "hidden",
+          taskTypeSelect.value !== "Other"
+        );
+      }
+
+      function validateModelFiles() {
+        const modelFiles = document.getElementById("model_files").files;
+        document.getElementById(
+          "modelFilesCount"
+        ).innerText = `${modelFiles.length} file(s) selected`;
+        checkFormValidity();
+      }
+
+      function validateTestImages() {
+        const datasetName = document.getElementById("dataset_name").value;
+        const testImages = document.getElementById("test_images").files;
+        const statusMessage = document.getElementById("testImagesCount");
+        let validCount = 0;
+
+        Array.from(testImages).forEach((file) => {
+          const isValidFormat = /\.(jpg|png)$/i.test(file.name);
+          const isValidName = new RegExp(
+            `^${datasetName}_\\d+\\.(jpg|png)$`,
+            "i"
+          ).test(file.name);
+
+          if (isValidFormat && isValidName) {
+            validCount++;
+          }
+        });
+
+        const isCountValid = validCount === testImages.length;
+        statusMessage.innerText = `${testImages.length} image(s) selected`;
+        statusMessage.style.color = isCountValid ? "green" : "red";
+        checkFormValidity();
+      }
+
+      function validateGroundTruthImages() {
+        const datasetName = document.getElementById("dataset_name").value;
+        const groundTruthImages = document.getElementById("ground_truth").files;
+        const statusMessage = document.getElementById("groundTruthImagesCount");
+        let validCount = 0;
+
+        Array.from(groundTruthImages).forEach((file) => {
+          const isValidFormat = /\.(jpg|png)$/i.test(file.name);
+          const isValidName = new RegExp(
+            `^${datasetName}_\\d+_Segmentation\\.(jpg|png)$`,
+            "i"
+          ).test(file.name);
+
+          if (isValidFormat && isValidName) {
+            validCount++;
+          }
+        });
+
+        const isCountValid = validCount === groundTruthImages.length;
+        statusMessage.innerText = `${groundTruthImages.length} image(s) selected`;
+        statusMessage.style.color = isCountValid ? "green" : "red";
+        checkFormValidity();
+      }
+
+      function checkFormValidity() {
+        const testImagesValid =
+          document.getElementById("testImagesCount").style.color === "green";
+        const groundTruthImagesValid =
+          document.getElementById("groundTruthImagesCount").style.color ===
+          "green";
+        document.getElementById("submitBtn").disabled = !(
+          testImagesValid && groundTruthImagesValid
+        );
+      }
+
+      function resetForm() {
+        document
+          .querySelectorAll(".file-count")
+          .forEach((el) => (el.innerText = ""));
+        document.getElementById("submitBtn").disabled = true;
+      }
+    </script>
+  </body>
+</html>
