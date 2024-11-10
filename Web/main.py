@@ -20,7 +20,7 @@ logger.info("Logger initialized.")
 app.config['APP_DATA'] = os.getenv('APP_DATA_PATH', '/shared/data')
 app.config['APP_RESULT'] = os.getenv('APP_RESULT_PATH', '/shared/result')
 app.config['APP_LOG'] = os.path.join(os.getenv('APP_LOG_PATH', '/shared/logs'), 'app.log')
-app.secret_key = os.getenv("FLASK_SECRET_KEY")  # Ensure FLASK_SECRET_KEY is set in .env for session security
+# app.secret_key = os.getenv("FLASK_SECRET_KEY")  # Ensure FLASK_SECRET_KEY is set in .env for session security
 
 # Check essential paths and environment variables
 check_essential_paths(logger)

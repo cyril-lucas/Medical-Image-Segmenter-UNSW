@@ -94,40 +94,6 @@ def datasetup():
     # Render the template with an inline message
     return render_template('data_setup.html', message=message)
 
-# @main.route('/data_setup', methods=['GET', 'POST'])
-# def data_setup():
-#     json_file = os.path.join(os.getenv("APP_DATA_PATH"), "data_record.json")
-
-#     if request.method == 'POST':
-#         task_type = request.form.get('taskType')
-#         dataset_name = request.form.get('datasetName')
-#         model_files = request.files.getlist('modelFiles')
-#         test_images = request.files.getlist('testImages')
-#         ground_truth_images = request.files.getlist('groundTruthImages')
-
-#         logger.info("Received POST request for data setup")
-#         logger.debug(f"Task Type: {task_type}")
-#         logger.debug(f"Dataset Name: {dataset_name}")
-#         logger.debug(f"Model Files: {[f.filename for f in model_files]}")
-#         logger.debug(f"Test Images: {[f.filename for f in test_images]}")
-#         logger.debug(f"Ground Truth Images: {[f.filename for f in ground_truth_images]}")
-
-#         # Process the form and capture any error messages
-#         try:
-#             result_message = process_data_setup_form(
-#                 task_type, dataset_name, model_files, test_images, ground_truth_images, json_file
-#             )
-#             logger.info("Data setup processing completed")
-#             flash(result_message)
-#         except Exception as e:
-#             logger.error("An error occurred during data setup processing", exc_info=True)
-#             flash(f"Error: {str(e)}")
-        
-#         return redirect(url_for('main.data_setup'))
-
-#     task_types = ["Skin_Lesion", "Multi-Organ_Segmentation", "Other"]
-#     return render_template('data_setup.html', task_types=task_types)
-
 @main.route("/folder_upload", methods=["GET", "POST"])
 def folder_upload():
     logger.info("Received request at /folder_upload")
@@ -196,24 +162,6 @@ def folder_upload():
             logger.error(f"Error contacting AI API: {e}")
 
     return render_template("folder_upload.html", task_types=task_types, datasets=datasets, models=models, AI_HOST=ai_host, AI_PORT=ai_port)
-
-# @main.route("/folder_result/<unique_id>")
-# def folder_result(unique_id):
-#     """Render the result page displaying records for a specific unique_id from result_record.json."""
-#     result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
-#     record = {}
-
-#     # Load data from result_record.json for the given unique_id
-#     if os.path.exists(result_record_path):
-#         with open(result_record_path, "r") as f:
-#             data = json.load(f)
-#             record = next((item for item in data if item["Unique ID"] == unique_id), {})
-
-#     if not record:
-#         flash("No result found for the specified ID.", "error")
-#         return redirect(url_for('main.index'))
-
-#     return render_template("folder_result.html", record=record)
 
 
 @main.route("/img_upload", methods=["GET", "POST"])
@@ -285,25 +233,6 @@ def img_upload():
     return render_template("img_upload.html", task_types=task_types, datasets=datasets, models=models, AI_HOST=ai_host, AI_PORT=ai_port)
 
 
-# @main.route("/img_result/<unique_id>")
-# def img_result(unique_id):
-#     """Render the result page displaying records for a specific unique_id from result_record.json."""
-#     result_record_path = os.path.join(os.getenv("APP_RESULT_PATH"), "result_record.json")
-#     record = {}
-
-#     # Load data from result_record.json for the given unique_id
-#     if os.path.exists(result_record_path):
-#         with open(result_record_path, "r") as f:
-#             data = json.load(f)
-#             record = next((item for item in data if item["Unique ID"] == unique_id), {})
-
-#     if not record:
-#         flash("No result found for the specified ID.", "error")
-#         return redirect(url_for('main.index'))
-
-#     return render_template("img_result.html", record=record)
-
-
 @main.route('/result/<result_id>')
 def result(result_id):
     RESULT_PATH = os.getenv("APP_RESULT_PATH", "/shared/result")
@@ -319,12 +248,12 @@ def result(result_id):
     
     # Get paths for images based on the matched IDs
     test_images = {
-        extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/Test_images/{file}"
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Test_images")
+        extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/test_folder/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
     }
     ground_truth_images = {
-        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): f"{result_id}/Ground_truth/{file}"
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Ground_truth")
+        extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): f"{result_id}/ground_truth/{file}"
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/ground_truth")
     }
     sampled_images = {
         extract_id(file, r"(\d+)_output_ens\.jpg"): f"{result_id}/sampled/{file}"
@@ -346,13 +275,13 @@ def result(result_id):
     return render_template(
         "result.html",
         matched_images=matched_images,
-        scores={
-            "F1_Score": result.get("F1_Score"),
-            "Specificity": result.get("Specificity"),
-            "Sensitivity": result.get("Sensitivity"),
-            "Accuracy": result.get("Accuracy"),
-            "Dice_Score": result.get("Dice_Score"),
-            "IoU": result.get("IoU")
+        scores = {
+            "F1Score": result.get("metrics", {}).get("F1Score", "N/A"),
+            "Specificity": result.get("metrics", {}).get("Specificity", "N/A"),
+            "Sensitivity": result.get("metrics", {}).get("Sensitivity", "N/A"),
+            "Accuracy": result.get("metrics", {}).get("Accuracy", "N/A"),
+            "DiceScore": result.get("metrics", {}).get("DiceScore", "N/A"),
+            "IoU": result.get("metrics", {}).get("IoU", "N/A")
         },
         result_id=result_id
     )
@@ -374,8 +303,8 @@ def download_pdf(result_id):
 
     # Paths to local image files
     test_images = {
-        extract_id(file, r"ISIC_(\d+)\.jpg"): os.path.join(RESULT_PATH, result_id, "Test_images", file)
-        for file in os.listdir(f"{RESULT_PATH}/{result_id}/Test_images")
+        extract_id(file, r"ISIC_(\d+)\.jpg"): os.path.join(RESULT_PATH, result_id, "test_folder", file)
+        for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
     }
     ground_truth_images = {
         extract_id(file, r"ISIC_(\d+)_Segmentation\.png"): os.path.join(RESULT_PATH, result_id, "ground_truth", file)
@@ -420,11 +349,11 @@ def download_pdf(result_id):
 
     # Table content
     pdf.set_font("Arial", "", 12)
-    score_keys = ["F1_Score", "Specificity", "Sensitivity", "Accuracy", "Dice_Score", "IoU"]
+    score_keys = ["F1Score", "Specificity", "Sensitivity", "Accuracy", "DiceScore", "IoU"]
     for key in score_keys:
         pdf.set_x(table_x)
         pdf.cell(40, 10, key, border=1, align="C")
-        pdf.cell(40, 10, str(result.get(key, 'N/A')), border=1, align="C")
+        pdf.cell(40, 10, str(result["metrics"].get(key, 'N/A')), border=1, align="C")
         pdf.ln()  # Move to the next row
 
     pdf.ln(10)  # Add space below the scores section
