@@ -11,11 +11,8 @@ class DatasetFormApp:
         self.root = root
         self.root.title("Dataset Upload Form")
 
-        # Load environment variables
-        self.app_data_path = os.getenv("APP_DATA_PATH", "../shared/data")
-
         # JSON File Path
-        self.json_file = os.path.join(self.app_data_path, "data_record.json")
+        self.json_file = "../shared/data/data_record.json"
         self.initialize_json()
 
         # Task Type
@@ -162,7 +159,7 @@ class DatasetFormApp:
             "Unique ID": self.generate_unique_id(),
             "Task Type": task_type,
             "Dataset Name": dataset_name,
-            "Path": os.path.join(self.app_data_path, task_type, dataset_name),
+            "Path": f"/shared/data/{task_type}/{dataset_name}",
             "Number of Models": model_count,
             "Number of Test Images": test_count,
             "Size of Test Images": test_size,
@@ -187,7 +184,7 @@ class DatasetFormApp:
             return
 
         # Define directories with the specified task type name
-        base_dir = os.path.join(self.app_data_path, task_type, dataset_name)
+        base_dir = f"../shared/data/{task_type}/{dataset_name}"
         test_dir = os.path.join(base_dir, "Test_images")
         ground_truth_dir = os.path.join(base_dir, "Ground_truth")
         model_dir = os.path.join(base_dir, "model")
