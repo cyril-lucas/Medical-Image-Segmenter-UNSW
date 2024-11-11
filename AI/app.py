@@ -33,9 +33,17 @@ base_url = f"http://{ai_host}:{ai_port}"
 def generate_unique_id():
     return str(random.randint(1000000000, 9999999999))
 
+def create_mapping_csv(result_dir, mapped_images):
+    mapping_file_path = os.path.join(result_dir, "mapping.csv")
+    with open(mapping_file_path, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["image_id", "test_image_path", "ground_truth_path"])
+        for image in mapped_images:
+            writer.writerow([image["image_id"], image["test_image_path"], image["ground_truth_path"]])
+    logger.info(f"Mapping file created at {mapping_file_path}")
+
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
-    
     logger.info("Received request at /predict")
 
     # Determine if it's a folder or single image upload
@@ -73,6 +81,7 @@ def predict():
     os.makedirs(sampled_dir, exist_ok=True)
 
     # Save uploaded file(s)
+    mapped_images = []
     for file in test_files:
         file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))  # Get only the filename
         file.save(file_path)
@@ -93,7 +102,7 @@ def predict():
 
             # Copy ground truth images based on the mapping file
             for row in reader:
-                _, image_name, test_image_path, ground_truth_path = row
+                image_id, image_name, test_image_path, ground_truth_path = row
 
                 # Check if the image_name is in the set of uploaded filenames
                 if image_name in uploaded_filenames:
@@ -104,14 +113,25 @@ def predict():
                     shutil.copy(source_path, dest_path)
                     logger.info(f"Copied ground truth image: {source_path} to {dest_path}")
 
+                    # Add to mapped_images list for mapping.csv
+                    mapped_images.append({
+                        "image_id": image_name,
+                        "test_image_path": os.path.join("test_folder", image_name),
+                        "ground_truth_path": os.path.join("ground_truth", ground_truth_image_name)
+                    })
+
+            # Create mapping.csv before evaluation
+            create_mapping_csv(result_dir, mapped_images)
+
             for image_name in uploaded_filenames:
-                # Strip prefix if it exists (e.g., "ISIC_")
-                if "_" in image_name:
-                    base_name = image_name.split("_", 1)[-1].split(".")[0]  # Extract base name after prefix
-                else:
-                    base_name = os.path.splitext(image_name)[0]
+                # # Strip prefix if it exists (e.g., "ISIC_")
+                # if "_" in image_name:
+                #     base_name = image_name.split("_", 1)[-1].split(".")[0]  # Extract base name after prefix
+                # else:
+                #     base_name = os.path.splitext(image_name)[0]
 
                 # Generate the standardized sample filename
+                base_name = image_name.split("_", 1)[-1].split(".")[0]
                 sample_filename = f"{base_name}_output_ens.jpg"
                 gt_filename = f"ISIC_{base_name}_Segmentation.png"  # Format of ground truth files
                 sample_path = os.path.join(sampled_path, sample_filename)

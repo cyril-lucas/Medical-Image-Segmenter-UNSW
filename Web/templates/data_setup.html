@@ -15,9 +15,6 @@
     />
   </head>
   <body>
-    <!-- Background Image -->
-    <div class="background"></div>
-
     <!-- Navigation Bar -->
     <div class="header-tab">
       <div class="title-container">
@@ -37,18 +34,21 @@
       </div>
     </div>
 
+    <!-- Background Image -->
+    <div class="background"></div>
+
     <!-- Main Form Section -->
     <div class="container">
       <h2>Setup Dataset</h2>
       <div class="container translucent-container">
-        <!-- Inline Message Display -->
-        {% if message %}
-        <div
-          class="message-box {{ 'success' if 'successfully' in message else 'error' }}"
-        >
+        <!-- Flash message section for feedback -->
+        {% with messages = get_flashed_messages() %} {% if messages %}
+        <div class="flash-messages">
+          {% for message in messages %}
           <p>{{ message }}</p>
+          {% endfor %}
         </div>
-        {% endif %}
+        {% endif %} {% endwith %}
 
         <!-- Dataset setup form -->
         <form
@@ -59,7 +59,14 @@
           class="form-container"
           onsubmit="showProcessingModal(event)"
         >
-          <!-- Task Type Selection -->
+          <!-- Hidden field for replace_existing -->
+          <input
+            type="hidden"
+            id="replace_existing"
+            name="replace_existing"
+            value="false"
+          />
+
           <div class="form-row">
             <label for="task_type">Task Type:</label>
             <select
@@ -75,16 +82,19 @@
               </option>
               <option value="Other">Other</option>
             </select>
+          </div>
+
+          <div class="form-row specify-task-row" id="specifyTaskRow">
             <input
               type="text"
               id="custom_task_type"
               name="custom_task_type"
               placeholder="Specify Task Type"
-              class="input-fullwidth hidden"
+              style="display: none"
+              class="input-fullwidth"
             />
           </div>
 
-          <!-- Dataset Name -->
           <div class="form-row">
             <label for="dataset_name">Dataset Name:</label>
             <input
@@ -96,10 +106,9 @@
             />
           </div>
 
-          <!-- Model Files Upload -->
           <div class="form-row">
             <label for="model_files">Model Files:</label>
-            <span class="form-hint">Hint: .pt, .pth, .pkl files</span>
+            <span class="form-hint">Format: .pt, .pth, .pkl files</span>
             <input
               type="file"
               id="model_files"
@@ -109,10 +118,9 @@
               required
               onchange="validateModelFiles()"
             />
-            <span id="modelFilesCount" class="file-count"></span>
+            <span id="modelFilesCount" class="status-message"></span>
           </div>
 
-          <!-- Test Images Folder -->
           <div class="form-row">
             <label for="test_images">Test Images Folder:</label>
             <span class="form-hint"
@@ -127,14 +135,13 @@
               required
               onchange="validateTestImages()"
             />
-            <span id="testImagesCount" class="file-count"></span>
+            <span id="testImagesCount" class="status-message"></span>
           </div>
 
-          <!-- Ground Truth Images Folder -->
           <div class="form-row">
             <label for="ground_truth">Ground Truth Images Folder:</label>
             <span class="form-hint"
-              >Format: {dataset_name}_{image_id}_Segmentation.png or .jpg</span
+              >Format: {dataset_name}_{image_id}_Segmentation.jpg or .png</span
             >
             <input
               type="file"
@@ -145,14 +152,13 @@
               required
               onchange="validateGroundTruthImages()"
             />
-            <span id="groundTruthImagesCount" class="file-count"></span>
+            <span id="groundTruthImagesCount" class="status-message"></span>
           </div>
 
-          <!-- Submit and Reset Buttons -->
           <button type="submit" id="submitBtn" class="predict-button" disabled>
             Submit
           </button>
-          <button type="reset" class="clear-button" onclick="resetForm()">
+          <button type="reset" class="clear-button-form" onclick="resetForm()">
             Clear Form
           </button>
         </form>
@@ -170,15 +176,25 @@
       </div>
     </div>
 
-    <!-- JavaScript Functions -->
+    <!-- Confirmation Modal for Dataset Replacement -->
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+        <p id="confirmationMessage">
+          Dataset already exists. Would you like to replace it?
+        </p>
+        <button onclick="confirmReplacement()" class="confirm-button">
+          Yes
+        </button>
+        <button onclick="closeModal()" class="close-modal-button">No</button>
+      </div>
+    </div>
+
     <script>
       function checkOtherTaskType() {
         const taskTypeSelect = document.getElementById("task_type");
         const customTaskType = document.getElementById("custom_task_type");
-        customTaskType.classList.toggle(
-          "hidden",
-          taskTypeSelect.value !== "Other"
-        );
+        customTaskType.style.display =
+          taskTypeSelect.value === "Other" ? "block" : "none";
       }
 
       function validateModelFiles() {
@@ -186,84 +202,149 @@
         document.getElementById(
           "modelFilesCount"
         ).innerText = `${modelFiles.length} file(s) selected`;
+        document.getElementById("modelFilesCount").style.color = "green";
         checkFormValidity();
       }
 
       function validateTestImages() {
-        const datasetName = document.getElementById("dataset_name").value;
         const testImages = document.getElementById("test_images").files;
+        const count = testImages.length;
+        const isValid = Array.from(testImages).every((file) =>
+          /\.(jpg|png)$/i.test(file.name)
+        );
         const statusMessage = document.getElementById("testImagesCount");
-        let validCount = 0;
 
-        Array.from(testImages).forEach((file) => {
-          const isValidFormat = /\.(jpg|png)$/i.test(file.name);
-          const isValidName = new RegExp(
-            `^${datasetName}_\\d+\\.(jpg|png)$`,
-            "i"
-          ).test(file.name);
+        if (count === 0) {
+          statusMessage.innerText = "No images in the folder.";
+          statusMessage.style.color = "red";
+        } else if (!isValid) {
+          statusMessage.innerText =
+            "Invalid format. Must be {dataset_name}_{image_id}.png or .jpg";
+          statusMessage.style.color = "red";
+        } else {
+          statusMessage.innerText = `${count} image(s) selected`;
+          statusMessage.style.color = "red"; // Initially set to red until ground truth is validated
+        }
 
-          if (isValidFormat && isValidName) {
-            validCount++;
-          }
-        });
-
-        const isCountValid = validCount === testImages.length;
-        statusMessage.innerText = `${testImages.length} image(s) selected`;
-        statusMessage.style.color = isCountValid ? "green" : "red";
+        // Call ground truth validation to ensure it reflects the latest status
+        validateGroundTruthImages();
         checkFormValidity();
       }
 
       function validateGroundTruthImages() {
-        const datasetName = document.getElementById("dataset_name").value;
         const groundTruthImages = document.getElementById("ground_truth").files;
+        const testImages = document.getElementById("test_images").files;
+        const count = groundTruthImages.length;
+        const isValid = Array.from(groundTruthImages).every((file) =>
+          /_Segmentation\.(jpg|png)$/i.test(file.name)
+        );
         const statusMessage = document.getElementById("groundTruthImagesCount");
-        let validCount = 0;
+        const testImagesStatus = document.getElementById("testImagesCount");
 
-        Array.from(groundTruthImages).forEach((file) => {
-          const isValidFormat = /\.(jpg|png)$/i.test(file.name);
-          const isValidName = new RegExp(
-            `^${datasetName}_\\d+_Segmentation\\.(jpg|png)$`,
-            "i"
-          ).test(file.name);
+        if (count === 0) {
+          statusMessage.innerText = "No images in the folder.";
+          statusMessage.style.color = "red";
+        } else if (!isValid) {
+          statusMessage.innerText =
+            "Invalid format. Must be {dataset_name}_{image_id}_Segmentation.png or .jpg";
+          statusMessage.style.color = "red";
+        } else if (count !== testImages.length) {
+          statusMessage.innerText = `Image count mismatch with Test Images (${testImages.length} vs ${count}).`;
+          statusMessage.style.color = "red";
+          testImagesStatus.style.color = "red"; // Ensure test images status stays red on mismatch
+        } else {
+          // When counts match and formats are valid, set both statuses to green
+          statusMessage.innerText = `${count} image(s) selected`;
+          statusMessage.style.color = "green";
+          testImagesStatus.style.color = "green";
+        }
 
-          if (isValidFormat && isValidName) {
-            validCount++;
-          }
-        });
-
-        const isCountValid = validCount === groundTruthImages.length;
-        statusMessage.innerText = `${groundTruthImages.length} image(s) selected`;
-        statusMessage.style.color = isCountValid ? "green" : "red";
         checkFormValidity();
       }
 
       function checkFormValidity() {
-        const testImages = document.getElementById("test_images").files;
-        const groundTruthImages = document.getElementById("ground_truth").files;
-        const testImagesValid =
+        const modelFiles =
+          document.getElementById("model_files").files.length > 0;
+        const testImages =
+          document.getElementById("test_images").files.length > 0;
+        const groundTruthImages =
+          document.getElementById("ground_truth").files.length > 0;
+        const isTestImagesValid =
           document.getElementById("testImagesCount").style.color === "green";
-        const groundTruthImagesValid =
+        const isGroundTruthValid =
           document.getElementById("groundTruthImagesCount").style.color ===
           "green";
-        const sameFileCount = testImages.length === groundTruthImages.length;
 
-        // Enable submit button only if both folders have valid images and the same count
         document.getElementById("submitBtn").disabled = !(
-          testImagesValid &&
-          groundTruthImagesValid &&
-          sameFileCount
+          modelFiles &&
+          testImages &&
+          groundTruthImages &&
+          isTestImagesValid &&
+          isGroundTruthValid
         );
       }
 
-      function resetForm() {
-        document
-          .querySelectorAll(".file-count")
-          .forEach((el) => (el.innerText = ""));
-        document.getElementById("submitBtn").disabled = true;
+      function showProcessingModal(event) {
+        event.preventDefault(); // Prevents default form submission
+        document.getElementById("processingModal").style.display = "flex";
 
-        // Reset Task Type dropdown to default (e.g., Skin_Lesion)
-        document.getElementById("task_type").value = "Skin_Lesion";
-        checkOtherTaskType(); // Hide the custom task type input if it was shown
+        // Convert form data to include replacement flag if confirmed
+        const formData = new FormData(document.getElementById("dataSetupForm"));
+        formData.set(
+          "replace_existing",
+          document.getElementById("replace_existing").value
+        );
+
+        fetch("{{ url_for('main.datasetup') }}", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.replacePrompt) {
+              closeModal();
+              document.getElementById("confirmationModal").style.display =
+                "flex";
+            } else if (data.success) {
+              document.getElementById(
+                "modalMessage"
+              ).innerText = `Dataset added successfully! Unique ID: ${data.unique_id}`;
+            } else {
+              document.getElementById(
+                "modalMessage"
+              ).innerText = `Error: ${data.error}`;
+            }
+          })
+          .catch(() => {
+            document.getElementById("modalMessage").innerText =
+              "An error occurred during submission.";
+          });
+      }
+
+      function confirmReplacement() {
+        // Set replace_existing to true and resubmit
+        document.getElementById("replace_existing").value = "true";
+        document.getElementById("confirmationModal").style.display = "none";
+
+        // Trigger the actual form submission event instead of calling the function recursively
+        document
+          .getElementById("dataSetupForm")
+          .dispatchEvent(new Event("submit", { cancelable: true }));
+      }
+
+      function closeModal() {
+        document.getElementById("processingModal").style.display = "none";
+        document.getElementById("confirmationModal").style.display = "none";
+        resetForm();
+      }
+
+      function resetForm() {
+        document.getElementById("dataSetupForm").reset();
+        document.getElementById("replace_existing").value = "false";
+        document.getElementById("testImagesCount").innerText = "";
+        document.getElementById("groundTruthImagesCount").innerText = "";
+        document.getElementById("modelFilesCount").innerText = "";
+        document.getElementById("submitBtn").disabled = true;
       }
     </script>
   </body>

@@ -181,7 +181,7 @@ body {
 }
 
 .form-container select,
-.form-container input[type="file"] {
+.form-container input[type="file"] .form-container input[type="text"] {
   width: 100%;
   padding: 10px;
   font-size: 16px;
@@ -279,7 +279,23 @@ body {
   margin-bottom: 15px;
 }
 
-.clear-button:hover {
+/* Button Styling */
+.clear-button-form {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 15px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.clear-button:hover,
+.clear-button-form:hover {
   background-color: #e04444;
 }
 
@@ -313,6 +329,8 @@ body {
   text-align: center;
   width: 300px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  position: relative;
 }
 
 .modal-content h3 {
@@ -417,13 +435,6 @@ body {
   display: inline-block;
   font-size: 14px;
   margin-left: 10px;
-}
-
-/* Align clear button on the top right of the form */
-.clear-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
 }
 
 /* Full-width input styling for uniform width */

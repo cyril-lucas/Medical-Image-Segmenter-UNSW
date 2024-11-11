@@ -11,9 +11,10 @@ class ISICDataset(Dataset):
         mapping_file = os.path.join(data_path, 'mapping.csv')
         df = pd.read_csv(mapping_file)
         
-        # Extract the image and ground truth file paths
-        self.image_paths = df['test_images'].apply(lambda x: os.path.join(data_path, x)).tolist()
-        self.mask_paths = df['ground_truth'].apply(lambda x: os.path.join(data_path, x)).tolist()
+        # Adjusted column names to match mapping.csv structure
+        self.image_paths = df['test_image_path'].apply(lambda x: os.path.join(data_path, x)).tolist()
+        self.mask_paths = df['ground_truth_path'].apply(lambda x: os.path.join(data_path, x)).tolist()
+
         
         # Store transform and data path
         self.transform = transform

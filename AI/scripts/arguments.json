@@ -5,7 +5,6 @@
   "use_ddim": false,
   "num_ensemble": 5,
   "gpu_dev": "0",
-  "multi_gpu": null,
   "debug": false,
   "image_size": 256,
   "num_channels": 128,

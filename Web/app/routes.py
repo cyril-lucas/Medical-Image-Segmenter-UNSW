@@ -80,6 +80,19 @@ def verify_images_in_mapping():
 @main.route('/datasetup', methods=['GET', 'POST'])
 def datasetup():
     message = ""
+    replace_existing = request.form.get('replace_existing', 'false').lower() == 'true'
+    
+    logger.info("Received request at /datasetup")
+
+    # Define the path for data_record.json and ensure it exists
+    data_record_path = os.path.join(os.getenv('APP_DATA_PATH', '/shared/data'), 'data_record.json')
+    if not os.path.exists(data_record_path):
+        os.makedirs(os.path.dirname(data_record_path), exist_ok=True)
+        with open(data_record_path, 'w') as f:
+            json.dump([], f)
+        logger.info(f"Initialized data_record.json at {data_record_path}")
+
+    
     if request.method == 'POST':
         # Extract form data
         task_type = request.form.get('taskType')
@@ -88,11 +101,43 @@ def datasetup():
         test_images = request.files.getlist('testImages')
         ground_truth_images = request.files.getlist('groundTruthImages')
         
-        # Pass data to process function and get response
-        success, message = process_dataset_form(task_type, dataset_name, model_files, test_images, ground_truth_images)
+        logger.info(f"Processing dataset setup for task type: {task_type}, dataset name: {dataset_name}")
         
-    # Render the template with an inline message
+        # Load existing records from data_record.json
+        with open(data_record_path, 'r') as f:
+            records = json.load(f)
+            logger.info(f"Loaded existing dataset records from {data_record_path}")
+
+        # Find any active records with the same task type and dataset name
+        existing_record = next((record for record in records if record['Dataset Name'] == dataset_name and record['Task Type'] == task_type and record['Active']), None)
+         
+        if existing_record:
+            logger.info(f"Found existing active record for dataset: {dataset_name} and task type: {task_type}")
+
+        # If an existing record is found and replace flag is not set, prompt for replacement
+        if existing_record and not replace_existing:
+            logger.info("Prompting user for dataset replacement confirmation.")
+            return jsonify({'replacePrompt': True, 'message': "Dataset already exists. Would you like to replace it?"})
+
+        # If replace is confirmed, deactivate the old record
+        if replace_existing and existing_record:
+            existing_record['Active'] = False
+            logger.info(f"Deactivated existing record for dataset: {dataset_name} and task type: {task_type}")
+
+        # Process the dataset, passing `replace_existing` to deactivate old records if necessary
+        success, message = process_dataset_form(task_type, dataset_name, model_files, test_images, ground_truth_images, replace_existing)
+        
+        if success:
+            logger.info("Dataset processed successfully.")
+            message = "Dataset processed successfully."
+        else:
+            logger.error(f"Error processing dataset: {message}")
+            message = f"Error: {message}"
+
+    # Render the template with the message
+    logger.info("Rendering data_setup.html with message.")
     return render_template('data_setup.html', message=message)
+
 
 @main.route("/folder_upload", methods=["GET", "POST"])
 def folder_upload():
