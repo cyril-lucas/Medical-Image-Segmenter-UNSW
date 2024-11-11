@@ -9,6 +9,7 @@ services:
       - ENV=${ENV}
       - APP_DATA_PATH=${APP_DATA_PATH}
       - APP_LOG_PATH=${APP_LOG_PATH}
+      - APP_MODEL_PATH=${APP_MODEL_PATH}
       - AI_HOST=${AI_HOST}
       - AI_PORT=${AI_PORT}
     ports:
@@ -31,6 +32,7 @@ services:
       - APP_DATA_PATH=${APP_DATA_PATH}
       - APP_LOG_PATH=${APP_LOG_PATH}
       - APP_RESULT_PATH=${APP_RESULT_PATH}
+      - APP_MODEL_PATH=${APP_MODEL_PATH}
       - AI_HOST_URL=http://ai-service:${AI_PORT}
       - WEB_HOST=${WEB_HOST}
       - WEB_PORT=${WEB_PORT}

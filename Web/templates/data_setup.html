@@ -84,7 +84,7 @@
             </select>
           </div>
 
-          <div class="form-row specify-task-row" id="specifyTaskRow">
+          <div class="form-row" id="specifyTaskRow">
             <input
               type="text"
               id="custom_task_type"
@@ -103,22 +103,8 @@
               name="datasetName"
               required
               class="input-fullwidth"
+              onfocusout="formatDatasetName()"
             />
-          </div>
-
-          <div class="form-row">
-            <label for="model_files">Model Files:</label>
-            <span class="form-hint">Format: .pt, .pth, .pkl files</span>
-            <input
-              type="file"
-              id="model_files"
-              name="modelFiles"
-              accept=".pt,.pth,.pkl"
-              multiple
-              required
-              onchange="validateModelFiles()"
-            />
-            <span id="modelFilesCount" class="status-message"></span>
           </div>
 
           <div class="form-row">
@@ -137,6 +123,9 @@
             />
             <span id="testImagesCount" class="status-message"></span>
           </div>
+
+          <div style="height: 10px"></div>
+          <!-- Adjust height as needed -->
 
           <div class="form-row">
             <label for="ground_truth">Ground Truth Images Folder:</label>
@@ -197,20 +186,20 @@
           taskTypeSelect.value === "Other" ? "block" : "none";
       }
 
-      function validateModelFiles() {
-        const modelFiles = document.getElementById("model_files").files;
-        document.getElementById(
-          "modelFilesCount"
-        ).innerText = `${modelFiles.length} file(s) selected`;
-        document.getElementById("modelFilesCount").style.color = "green";
-        checkFormValidity();
+      function formatDatasetName() {
+        const datasetNameInput = document.getElementById("dataset_name");
+        datasetNameInput.value = datasetNameInput.value.trim().toUpperCase();
       }
 
       function validateTestImages() {
+        const datasetName = document
+          .getElementById("dataset_name")
+          .value.trim()
+          .toLowerCase();
         const testImages = document.getElementById("test_images").files;
         const count = testImages.length;
         const isValid = Array.from(testImages).every((file) =>
-          /\.(jpg|png)$/i.test(file.name)
+          new RegExp(`^${datasetName}_[0-9]+\\.(jpg|png)$`, "i").test(file.name)
         );
         const statusMessage = document.getElementById("testImagesCount");
 
@@ -218,44 +207,49 @@
           statusMessage.innerText = "No images in the folder.";
           statusMessage.style.color = "red";
         } else if (!isValid) {
-          statusMessage.innerText =
-            "Invalid format. Must be {dataset_name}_{image_id}.png or .jpg";
+          statusMessage.innerText = `Invalid format. Must be {dataset_name}_{image_id}.png or .jpg`;
           statusMessage.style.color = "red";
         } else {
           statusMessage.innerText = `${count} image(s) selected`;
           statusMessage.style.color = "red"; // Initially set to red until ground truth is validated
         }
 
-        // Call ground truth validation to ensure it reflects the latest status
-        validateGroundTruthImages();
+        validateGroundTruthImages(); // Call to ensure both validations are checked
         checkFormValidity();
       }
 
       function validateGroundTruthImages() {
+        const datasetName = document
+          .getElementById("dataset_name")
+          .value.trim()
+          .toLowerCase();
         const groundTruthImages = document.getElementById("ground_truth").files;
         const testImages = document.getElementById("test_images").files;
         const count = groundTruthImages.length;
         const isValid = Array.from(groundTruthImages).every((file) =>
-          /_Segmentation\.(jpg|png)$/i.test(file.name)
+          new RegExp(
+            `^${datasetName}_[0-9]+_Segmentation\\.(jpg|png)$`,
+            "i"
+          ).test(file.name)
         );
-        const statusMessage = document.getElementById("groundTruthImagesCount");
+        const groundTruthStatus = document.getElementById(
+          "groundTruthImagesCount"
+        );
         const testImagesStatus = document.getElementById("testImagesCount");
 
         if (count === 0) {
-          statusMessage.innerText = "No images in the folder.";
-          statusMessage.style.color = "red";
+          groundTruthStatus.innerText = "No images in the folder.";
+          groundTruthStatus.style.color = "red";
         } else if (!isValid) {
-          statusMessage.innerText =
-            "Invalid format. Must be {dataset_name}_{image_id}_Segmentation.png or .jpg";
-          statusMessage.style.color = "red";
+          groundTruthStatus.innerText = `Invalid format. Must be {dataset_name}_{image_id}_Segmentation.png or .jpg`;
+          groundTruthStatus.style.color = "red";
         } else if (count !== testImages.length) {
-          statusMessage.innerText = `Image count mismatch with Test Images (${testImages.length} vs ${count}).`;
-          statusMessage.style.color = "red";
-          testImagesStatus.style.color = "red"; // Ensure test images status stays red on mismatch
+          groundTruthStatus.innerText = `Image count mismatch with Test Images (${testImages.length} vs ${count}).`;
+          groundTruthStatus.style.color = "red";
+          testImagesStatus.style.color = "red";
         } else {
-          // When counts match and formats are valid, set both statuses to green
-          statusMessage.innerText = `${count} image(s) selected`;
-          statusMessage.style.color = "green";
+          groundTruthStatus.innerText = `${count} image(s) selected`;
+          groundTruthStatus.style.color = "green";
           testImagesStatus.style.color = "green";
         }
 
@@ -263,24 +257,13 @@
       }
 
       function checkFormValidity() {
-        const modelFiles =
-          document.getElementById("model_files").files.length > 0;
-        const testImages =
-          document.getElementById("test_images").files.length > 0;
-        const groundTruthImages =
-          document.getElementById("ground_truth").files.length > 0;
         const isTestImagesValid =
           document.getElementById("testImagesCount").style.color === "green";
         const isGroundTruthValid =
           document.getElementById("groundTruthImagesCount").style.color ===
           "green";
-
         document.getElementById("submitBtn").disabled = !(
-          modelFiles &&
-          testImages &&
-          groundTruthImages &&
-          isTestImagesValid &&
-          isGroundTruthValid
+          isTestImagesValid && isGroundTruthValid
         );
       }
 
@@ -309,6 +292,7 @@
               document.getElementById(
                 "modalMessage"
               ).innerText = `Dataset added successfully! Unique ID: ${data.unique_id}`;
+              setTimeout(() => window.location.reload(true), 1000);
             } else {
               document.getElementById(
                 "modalMessage"
@@ -335,7 +319,13 @@
       function closeModal() {
         document.getElementById("processingModal").style.display = "none";
         document.getElementById("confirmationModal").style.display = "none";
-        resetForm();
+        const modalMessage = document.getElementById("modalMessage").innerText;
+        if (
+          modalMessage.includes("Dataset added successfully") ||
+          modalMessage.includes("Error:")
+        ) {
+          resetForm();
+        }
       }
 
       function resetForm() {
@@ -343,8 +333,8 @@
         document.getElementById("replace_existing").value = "false";
         document.getElementById("testImagesCount").innerText = "";
         document.getElementById("groundTruthImagesCount").innerText = "";
-        document.getElementById("modelFilesCount").innerText = "";
         document.getElementById("submitBtn").disabled = true;
+        document.getElementById("custom_task_type").style.display = "none";
       }
     </script>
   </body>

@@ -12,9 +12,14 @@
   <body>
     <!-- Navigation Bar -->
     <div class="header-tab">
-      <span class="title">Potatoes Medical Image Segmenter</span>
+      <div class="title-container">
+        <span class="title">Potatoes Medical Image Segmenter</span>
+      </div>
       <div class="nav-links">
         <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.datasetup') }}" class="header-link"
+          >Setup Dataset</a
+        >
         <a href="{{ url_for('main.img_upload') }}" class="header-link"
           >Segment Image</a
         >

@@ -57,15 +57,16 @@ def predict():
         logger.error("Missing files or form data in the request.")
         return jsonify({"error": "Missing files or form data in the request."}), 400
 
+
     # Validate form data
-    if not request.form.get("taskType") or not request.form.get("dataset") or not request.form.get("model"):
+    task_type = request.form.get("taskType")
+    dataset_name = request.form.get("dataset")
+    model_name = request.form.get("modelName")
+    model_file = request.form.get("modelFile")
+    if not task_type or not dataset_name or not model_name or not model_file:
         logger.error("Missing form data in the request.")
         return jsonify({"error": "Missing form data in the request."}), 400
 
-    # Extract form data
-    task_type = request.form.get("taskType")
-    dataset_name = request.form.get("dataset")
-    model_name = request.form.get("model")
 
     # Generate unique ID and create result directory
     unique_id = generate_unique_id()
@@ -73,7 +74,10 @@ def predict():
     test_folder_dir = os.path.join(result_dir, "test_folder")
     ground_truth_dir = os.path.join(result_dir, "ground_truth")
     sampled_dir = os.path.join(result_dir, "sampled")
+    
     logger.info(f"Generated unique_id: {unique_id}, result_dir: {result_dir}")
+    modelname_dir = os.path.join(os.getenv("APP_MODEL_PATH", "/shared/models"), model_name)
+    modelfile_dir = os.path.join(os.getenv("APP_MODEL_PATH", "/shared/models"), model_name, "model", model_file)
 
     # Create necessary directories
     os.makedirs(test_folder_dir, exist_ok=True)
@@ -81,23 +85,25 @@ def predict():
     os.makedirs(sampled_dir, exist_ok=True)
 
     # Save uploaded file(s)
-    mapped_images = []
+    # uploaded_filenames = {}
     for file in test_files:
         file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))  # Get only the filename
         file.save(file_path)
         logger.info(f"Saved file: {file_path}")
+        # uploaded_filenames.add(file.filename)
 
 
     # Load and process mapping file if it exists
     mapping_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "mapping.csv")
+    mapped_images = []
+    
     if os.path.exists(mapping_path):
         with open(mapping_path, "r") as mapping_file:
             reader = csv.reader(mapping_file)
             next(reader)  # Skip header
 
-            # Create a set of uploaded image filenames
             uploaded_filenames = {os.path.basename(file.filename) for file in test_files}
-            sampled_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "sampled")
+            sampled_path = os.path.join(modelname_dir, "sampled")
             all_samples_found = True
 
             # Copy ground truth images based on the mapping file
@@ -123,27 +129,19 @@ def predict():
             # Create mapping.csv before evaluation
             create_mapping_csv(result_dir, mapped_images)
 
-            for image_name in uploaded_filenames:
-                # # Strip prefix if it exists (e.g., "ISIC_")
-                # if "_" in image_name:
-                #     base_name = image_name.split("_", 1)[-1].split(".")[0]  # Extract base name after prefix
-                # else:
-                #     base_name = os.path.splitext(image_name)[0]
+            for image_name in uploaded_filenames:   
+                    # Check if sample exists
+                    base_name = image_name.split("_", 1)[-1].split(".")[0]
+                    sample_filename = f"{base_name}_output_ens.jpg"
+                    sample_path = os.path.join(sampled_path, sample_filename)
+                    if os.path.exists(sample_path):
+                        shutil.copy(sample_path, sampled_dir)
+                        logger.info(f"Found existing sample: {sample_path}")
 
-                # Generate the standardized sample filename
-                base_name = image_name.split("_", 1)[-1].split(".")[0]
-                sample_filename = f"{base_name}_output_ens.jpg"
-                gt_filename = f"ISIC_{base_name}_Segmentation.png"  # Format of ground truth files
-                sample_path = os.path.join(sampled_path, sample_filename)
-                
-                if os.path.exists(sample_path):
-                    shutil.copy(sample_path, sampled_dir)
-                    logger.info(f"Found existing sample: {sample_path}, copied to: {sampled_dir}")
-                else:
-                    logger.warning(f"Sample not found for image: {image_name}, sample_path: {sample_path}")
-                    all_samples_found = False
-                    break
-
+                    else:
+                        all_samples_found = False
+                        logger.warning(f"Sample not found for image: {image_name}")
+                        break
             if all_samples_found:
                 # If all samples were found, proceed to /evaluation
                 eval_response = requests.post(f"{base_url}/evaluation", json={"unique_id": unique_id})
@@ -158,7 +156,7 @@ def predict():
                 # If any sample is missing, call /sample and then /evaluation
                 sample_response = requests.post(f"{base_url}/sample", json={
                     "unique_id": unique_id,
-                    "model_path": os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "model", model_name),
+                    "model_path": modelfile_dir,
                     "dataset_name": dataset_name
                 })
                 
@@ -181,14 +179,6 @@ def predict():
         shutil.rmtree(result_dir, ignore_errors=True)
         return jsonify({"error": "Mapping file not found"}), 404
 
-    # Copy the selected model to model directory
-    model_source_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "model", model_name)
-    if not os.path.exists(model_source_path):
-        logger.error(f"Model file not found at {model_source_path}")
-        shutil.rmtree(result_dir, ignore_errors=True)
-        return jsonify({"error": "Model file not found"}), 404
-    logger.info(f"Using model from path: {model_source_path}")
-
     # Prepare JSON data for the result record
     json_data = {
         "Unique ID": unique_id,
@@ -196,7 +186,7 @@ def predict():
         "Test_image": test_folder_dir,
         "ground_truth": ground_truth_dir,
         "Dataset Name": dataset_name,
-        "Model": model_source_path,
+        "Model": modelfile_dir,
         "sampled_path": sampled_dir,
         "metrics": metrics
     }
@@ -250,7 +240,7 @@ def evaluation():
 
     logger.info(f"Running evaluation with unique_id: {unique_id}")
     eval_output = subprocess.check_output([
-        "python", "scripts/segmentation_eval.py",
+        "python", "/shared/models/MedSegDiffv2/segmentation_eval.py",
         "--inp_pth", sampled_dir,
         "--out_pth", ground_truth_dir
     ], text=True)

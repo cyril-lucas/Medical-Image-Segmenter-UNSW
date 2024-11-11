@@ -12,9 +12,14 @@
   <body>
     <!-- Navigation Bar -->
     <div class="header-tab">
-      <span class="title">Potatoes Medical Image Segmenter</span>
+      <div class="title-container">
+        <span class="title">Potatoes Medical Image Segmenter</span>
+      </div>
       <div class="nav-links">
         <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.datasetup') }}" class="header-link"
+          >Setup Dataset</a
+        >
         <a href="{{ url_for('main.img_upload') }}" class="header-link"
           >Segment Image</a
         >
@@ -53,9 +58,15 @@
               </select>
             </div>
             <div>
-              <label for="model">Select Model:</label>
-              <select id="model" name="model" required disabled>
-                <option value="">Select Model</option>
+              <label for="modelName">Select Model Name:</label>
+              <select id="modelName" name="modelName" required disabled>
+                <option value="">Select Model Name</option>
+              </select>
+            </div>
+            <div>
+              <label for="modelFile">Select Model File:</label>
+              <select id="modelFile" name="modelFile" required disabled>
+                <option value="">Select Model File</option>
               </select>
             </div>
             <div>
@@ -108,16 +119,25 @@
       const aiHostUrl = "http://{{ AI_HOST }}:{{ AI_PORT }}";
       // let responseData = null; // Variable to hold server response data until timeout completes
 
+      // Fetch datasets based on selected task type
       document
         .getElementById("taskType")
         .addEventListener("change", function () {
           const taskType = this.value;
           const datasetSelect = document.getElementById("dataset");
-          const modelSelect = document.getElementById("model");
+          const modelNameSelect = document.getElementById("modelName");
+          const modelFileSelect = document.getElementById("modelFile");
+
+          // Reset and enable dataset dropdown
           datasetSelect.disabled = !taskType;
-          modelSelect.disabled = true;
+          modelNameSelect.disabled = true;
+          modelFileSelect.disabled = true;
+
           datasetSelect.innerHTML = '<option value="">Select Dataset</option>';
-          modelSelect.innerHTML = '<option value="">Select Model</option>';
+          modelNameSelect.innerHTML =
+            '<option value="">Select Model Name</option>';
+          modelFileSelect.innerHTML =
+            '<option value="">Select Model File</option>';
 
           if (taskType) {
             fetch(`/get_datasets?taskType=${taskType}`)
@@ -133,29 +153,64 @@
           }
         });
 
+      // Fetch model names based on selected dataset
       document
         .getElementById("dataset")
         .addEventListener("change", function () {
           const taskType = document.getElementById("taskType").value;
           const dataset = this.value;
-          const modelSelect = document.getElementById("model");
-          modelSelect.disabled = !dataset;
-          modelSelect.innerHTML = '<option value="">Select Model</option>';
+          const modelNameSelect = document.getElementById("modelName");
+          const modelFileSelect = document.getElementById("modelFile");
+
+          // Reset and enable modelName dropdown
+          modelNameSelect.disabled = !dataset;
+          modelFileSelect.disabled = true;
+
+          modelNameSelect.innerHTML =
+            '<option value="">Select Model Name</option>';
+          modelFileSelect.innerHTML =
+            '<option value="">Select Model File</option>';
 
           if (dataset) {
-            fetch(`/get_models?taskType=${taskType}&dataset=${dataset}`)
+            fetch(`/get_model_names?taskType=${taskType}&dataset=${dataset}`)
               .then((response) => response.json())
               .then((data) => {
-                data.models.forEach((model) => {
+                data.models.forEach((modelName) => {
                   const option = document.createElement("option");
-                  option.value = model;
-                  option.textContent = model;
-                  modelSelect.appendChild(option);
+                  option.value = modelName;
+                  option.textContent = modelName;
+                  modelNameSelect.appendChild(option);
                 });
               });
           }
         });
 
+      // Fetch model files based on selected model name
+      document
+        .getElementById("modelName")
+        .addEventListener("change", function () {
+          const modelName = this.value;
+          const modelFileSelect = document.getElementById("modelFile");
+
+          // Enable modelFile dropdown
+          modelFileSelect.disabled = !modelName;
+          modelFileSelect.innerHTML =
+            '<option value="">Select Model File</option>';
+
+          if (modelName) {
+            fetch(`/get_model_files?modelName=${modelName}`)
+              .then((response) => response.json())
+              .then((data) => {
+                data.modelFiles.forEach((modelFile) => {
+                  const option = document.createElement("option");
+                  option.value = modelFile;
+                  option.textContent = modelFile;
+                  modelFileSelect.appendChild(option);
+                });
+              });
+          }
+        });
+      // Handle folder selection and preview
       document
         .getElementById("testFolder")
         .addEventListener("change", function (event) {
@@ -163,10 +218,9 @@
           const dataset = document.getElementById("dataset").value;
           const statusMessage = document.getElementById("statusMessage");
 
-          // Check if taskType and dataset are selected
           if (!taskType || !dataset) {
             statusMessage.innerHTML =
-              "<p style='color: red;'>Please select task type and dataset before uploading an image.</p>";
+              "<p style='color: red;'>Please select task type and dataset before uploading a folder.</p>";
             document.getElementById("predictButton").disabled = true;
             return;
           }
@@ -201,11 +255,7 @@
             fetch(`/verify_images_in_mapping`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                imageNames,
-                taskType,
-                dataset,
-              }),
+              body: JSON.stringify({ imageNames, taskType, dataset }),
             })
               .then((response) => response.json())
               .then((data) => {

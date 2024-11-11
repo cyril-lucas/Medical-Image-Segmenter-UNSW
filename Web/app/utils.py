@@ -114,14 +114,16 @@ def get_datasets_by_task(task_type):
         records = json.load(file)
     return {record["Dataset Name"] for record in records if record["Task Type"] == task_type and record["Active"]}
 
-def get_models_by_dataset(task_type, dataset_name):
-    """Retrieve model files available in the specified dataset's model folder."""
-    model_folder = os.path.join(os.getenv("APP_DATA_PATH"), task_type, dataset_name, "model")
-    if not os.path.isdir(model_folder):
-        raise FileNotFoundError(f"Model folder not found at {model_folder}")
-    return [f for f in os.listdir(model_folder) if f.endswith((".pt", ".pkl"))]
+# def get_models_by_dataset(task_type, dataset_name):
+#     """Retrieve model files available in the specified dataset's model folder."""
+#     model_folder = os.path.join(os.getenv("APP_DATA_PATH"), task_type, dataset_name, "model")
+#     if not os.path.isdir(model_folder):
+#         raise FileNotFoundError(f"Model folder not found at {model_folder}")
+#     return [f for f in os.listdir(model_folder) if f.endswith((".pt", ".pkl"))]
 
 def extract_id(filename, pattern):
-    """Extract ID from the filename using a regular expression pattern."""
-    match = re.search(pattern, filename)
-    return match.group(1) if match else None
+    match = re.search(pattern, filename, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    else:
+        return None
