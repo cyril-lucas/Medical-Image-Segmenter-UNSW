@@ -18,9 +18,15 @@ parser.add_argument('--model_pth', type=str, required=True, help='Path to the sa
 parser.add_argument('--test_images_dir', type=str, required=True, help='Path to the test images directory')
 parser.add_argument('--test_masks_dir', type=str, required=True, help='Path to the test masks directory')
 parser.add_argument('--save_dir_pred', type=str, default='./segmented_predicted_images', help='Path to save predictions')
-parser.add_argument('--save_dir_gt', type=str, default='./segmented_ground_truth', help='Path to save ground truth')
 
 args = parser.parse_args()
+
+# Remove all contents in save_dir_pred if it exists
+if os.path.exists(args.save_dir_pred):
+    for file_name in os.listdir(args.save_dir_pred):
+        file_path = os.path.join(args.save_dir_pred, file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
 # Set device
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -29,7 +35,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = SwinUNet(input_channels=3, output_channels=1).to(device)
 
 # Load state dict, removing 'module.' if necessary
-state_dict = torch.load(args.model_pth)
+state_dict = torch.load(args.model_pth, weights_only=True, map_location='cpu')
 if any(key.startswith("module.") for key in state_dict.keys()):
     state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
 
@@ -46,21 +52,20 @@ test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 # Save predictions
 os.makedirs(args.save_dir_pred, exist_ok=True)
-os.makedirs(args.save_dir_gt, exist_ok=True)
 
 with torch.no_grad():
-    for i, (images, masks) in enumerate(test_loader):
+    for i, (images, masks,img_name) in enumerate(test_loader):
         images = images.to(device)
         outputs = model(images)
         pred_mask = outputs.cpu().squeeze().numpy()
         gt_mask = masks.cpu().squeeze().numpy()
 
-        # Save predicted mask
-        pred_img = Image.fromarray((pred_mask * 255).astype(np.uint8))
-        pred_img.save(os.path.join(args.save_dir_pred, f"{i+1}.png"))
+        # Print the input image name
+        base_name = img_name[0].replace("ISIC_", "").split(".")[0]  # Remove 'ISIC_' prefix and extension
 
-        # Save ground truth mask
-        gt_img = Image.fromarray((gt_mask * 255).astype(np.uint8))
-        gt_img.save(os.path.join(args.save_dir_gt, f"{i+1}.tiff"))
+        # Save predicted mask with expected format
+        pred_img = Image.fromarray((pred_mask * 255).astype(np.uint8))
+        pred_img.save(os.path.join(args.save_dir_pred, f"{base_name}_output_ens.jpg"))  # Use formatted name
+
 
 print("Segmentation Complete!")

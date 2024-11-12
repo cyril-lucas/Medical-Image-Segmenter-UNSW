@@ -25,7 +25,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = SwinUNet(input_channels=3, output_channels=1, embed_dim=32, num_heads=[4, 8], window_size=4, mlp_ratio=4., depth=2)
 
 # Load state dict, removing 'module.' if necessary
-state_dict = torch.load(args.model_pth)
+state_dict = torch.load(args.model_pth, weights_only=True, map_location='cpu')
 if any(key.startswith("module.") for key in state_dict.keys()):
     state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
 
@@ -56,17 +56,15 @@ def evaluate_metrics_pytorch(model, dataloader, device):
     model.eval()
     all_metrics = {
         'Accuracy': [],
-        'Dice': [],
-        'Jaccard': [],
+        'Dice Coefficient': [],
+        'IoU': [],
         'Sensitivity': [],
         'Specificity': [],
-        'Precision': [],
-        'Recall': [],
-        'F1-Score': []
+        'F1 Score': []
     }
 
     with torch.no_grad():
-        for images, masks in dataloader:
+        for images, masks, img_name in dataloader:
             images = images.to(device)
             masks = masks.to(device)
 
@@ -93,14 +91,12 @@ def evaluate_metrics_pytorch(model, dataloader, device):
                 recall = sensitivity
                 f1 = dice  # F1-Score is the same as Dice coefficient for binary classification
 
+                all_metrics['IoU'].append(iou)
+                all_metrics['Dice Coefficient'].append(dice)
                 all_metrics['Accuracy'].append(accuracy)
-                all_metrics['Jaccard'].append(iou)
-                all_metrics['Dice'].append(dice)
-                all_metrics['Specificity'].append(specificity)
                 all_metrics['Sensitivity'].append(sensitivity)
-                all_metrics['Precision'].append(precision)
-                all_metrics['Recall'].append(recall)
-                all_metrics['F1-Score'].append(f1)
+                all_metrics['Specificity'].append(specificity)
+                all_metrics['F1 Score'].append(f1)
 
     # Compute average metrics
     avg_metrics = {metric: np.mean(values) for metric, values in all_metrics.items()}

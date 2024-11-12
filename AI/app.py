@@ -85,12 +85,10 @@ def predict():
     os.makedirs(sampled_dir, exist_ok=True)
 
     # Save uploaded file(s)
-    # uploaded_filenames = {}
     for file in test_files:
         file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))  # Get only the filename
         file.save(file_path)
         logger.info(f"Saved file: {file_path}")
-        # uploaded_filenames.add(file.filename)
 
 
     # Load and process mapping file if it exists
@@ -144,9 +142,16 @@ def predict():
                         break
             if all_samples_found:
                 # If all samples were found, proceed to /evaluation
-                eval_response = requests.post(f"{base_url}/evaluation", json={"unique_id": unique_id})
+                eval_response = requests.post(f"{base_url}/evaluation", json={
+                     "unique_id": unique_id,
+                    "model_path": modelfile_dir,
+                    "model_name": model_name,
+                    "dataset_name": dataset_name,
+                    "ground_truth_dir": ground_truth_dir,
+                    "test_folder_dir": test_folder_dir
+                })
                 if eval_response.status_code != 200:
-                    logger.error("valuation failed after finding all samplesE.")
+                    logger.error("valuation failed after finding all samples.")
                     shutil.rmtree(result_dir, ignore_errors=True)
                     logger.info(f"Deleted folder for unique_id {unique_id} due to evaluation error.")
                     return jsonify({"error": "Evaluation failed."}), 500
@@ -157,7 +162,10 @@ def predict():
                 sample_response = requests.post(f"{base_url}/sample", json={
                     "unique_id": unique_id,
                     "model_path": modelfile_dir,
-                    "dataset_name": dataset_name
+                    "model_name": model_name,
+                    "dataset_name": dataset_name,
+                    "ground_truth_dir": ground_truth_dir,
+                    "test_folder_dir": test_folder_dir
                 })
                 
                 if sample_response.status_code != 200:
@@ -166,7 +174,14 @@ def predict():
                     logger.info(f"Deleted folder for unique_id {unique_id} due to sampling error.")
                     return jsonify({"error": "Sampling failed."}), 500
                 
-                eval_response = requests.post(f"{base_url}/evaluation", json={"unique_id": unique_id})
+                eval_response = requests.post(f"{base_url}/evaluation", json={
+                     "unique_id": unique_id,
+                    "model_path": modelfile_dir,
+                    "model_name": model_name,
+                    "dataset_name": dataset_name,
+                    "ground_truth_dir": ground_truth_dir,
+                    "test_folder_dir": test_folder_dir
+                })
                 if eval_response.status_code != 200:
                     logger.error("Evaluation failed after sampling.")
                     shutil.rmtree(result_dir, ignore_errors=True)
@@ -214,15 +229,41 @@ def sample():
     sampled_dir = os.path.join(result_dir, "sampled")
     model_path = request.json.get("model_path")
     dataset_name = request.json.get("dataset_name")
+    model_name = request.json.get("model_name")
+    test_folder_dir = request.json.get("test_folder_dir")
+    ground_truth_dir = request.json.get("ground_truth_dir")
 
-    logger.info(f"Running sample with unique_id: {unique_id}, dataset_name: {dataset_name}, model_path: {model_path}")
-    sample_process = subprocess.run([
-        "python", "scripts/segmentation_sample.py",
-        "--data_name", dataset_name,
-        "--data_dir", result_dir,
-        "--out_dir", sampled_dir,
-        "--model_path", model_path
-    ])
+    logger.info(f"Running sample with unique_id: {unique_id}, dataset_name: {dataset_name}, model_name: {model_name}, model_path: {model_path}")
+    
+    if model_name == "MedSegDiffv2":
+        sample_process = subprocess.run([
+            "python", "/shared/models/MedSegDiffv2/segmentation_sample.py",
+            "--data_name", dataset_name,
+            "--data_dir", result_dir,
+            "--out_dir", sampled_dir,
+            "--model_path", model_path
+        ])
+    elif model_name == "TBConvl-Net":
+        sample_process = subprocess.run([
+            "python", "/shared/models/TBConvl-Net/segmentation.py",
+            "--model_pth", model_path,
+            "--test_images_dir", test_folder_dir,
+            "--test_masks_dir", ground_truth_dir,
+            "--save_dir_pred", sampled_dir
+        ])
+    else:
+        logger.error(f"Unsupported model_name: {model_name}")
+        return jsonify({"error": f"Unsupported model_name: {model_name}"}), 400
+
+    
+    # sample_process = subprocess.run([
+    #     "python", "scripts/segmentation_sample.py",
+    #     "--data_name", dataset_name,
+    #     "--data_dir", result_dir,
+    #     "--out_dir", sampled_dir,
+    #     "--model_path", model_path
+    # ])
+
 
     if sample_process.returncode == 0:
         logger.info("segmentation_sample.py executed successfully.")
@@ -237,13 +278,36 @@ def evaluation():
     result_dir = os.path.join(os.getenv("APP_RESULT_PATH", "/shared/result"), unique_id)
     sampled_dir = os.path.join(result_dir, "sampled")
     ground_truth_dir = os.path.join(result_dir, "ground_truth")
+    model_path = request.json.get("model_path")
+    model_name = request.json.get("model_name") 
+    test_folder_dir = request.json.get("test_folder_dir")
+    ground_truth_dir = request.json.get("ground_truth_dir")
 
-    logger.info(f"Running evaluation with unique_id: {unique_id}")
-    eval_output = subprocess.check_output([
-        "python", "/shared/models/MedSegDiffv2/segmentation_eval.py",
-        "--inp_pth", sampled_dir,
-        "--out_pth", ground_truth_dir
-    ], text=True)
+    logger.info(f"Running evaluation with unique_id: {unique_id}, model_name: {model_path}")
+
+    # Choose the evaluation script based on the model_name
+    if model_name == "MedSegDiffv2":
+        eval_output = subprocess.check_output([
+            "python", "/shared/models/MedSegDiffv2/segmentation_eval.py",
+            "--inp_pth", sampled_dir,
+            "--out_pth", ground_truth_dir
+        ], text=True)
+    elif model_name == "TBConvl-Net":
+        eval_output = subprocess.check_output([
+            "python", "/shared/models/TBConvl-Net/evaluate.py",
+            "--test_images_dir", test_folder_dir,
+            "--test_masks_dir", ground_truth_dir,
+            "--model_pth", model_path
+        ], text=True)
+    else:
+        logger.error(f"Unsupported model_name: {model_name}")
+        return jsonify({"error": f"Unsupported model_name: {model_name}"}), 400
+
+    # eval_output = subprocess.check_output([
+    #     "python", "/shared/models/MedSegDiffv2/segmentation_eval.py",
+    #     "--inp_pth", sampled_dir,
+    #     "--out_pth", ground_truth_dir
+    # ], text=True)
 
     metrics = {}
     for line in eval_output.strip().splitlines():
