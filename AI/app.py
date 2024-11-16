@@ -8,14 +8,12 @@ from flask_cors import CORS
 import csv
 import requests
 import subprocess
-
-
 app = Flask(__name__)
 CORS(app) 
 
 # Configure logger
 log_dir = os.getenv("APP_LOG_PATH", "/shared/logs")
-os.makedirs(log_dir, exist_ok=True)  # Ensure log directory exists
+os.makedirs(log_dir, exist_ok=True)  
 log_file_path = os.path.join(log_dir, "app.log")
 
 logging.basicConfig(
@@ -57,7 +55,6 @@ def predict():
         logger.error("Missing files or form data in the request.")
         return jsonify({"error": "Missing files or form data in the request."}), 400
 
-
     # Validate form data
     task_type = request.form.get("taskType")
     dataset_name = request.form.get("dataset")
@@ -67,14 +64,13 @@ def predict():
         logger.error("Missing form data in the request.")
         return jsonify({"error": "Missing form data in the request."}), 400
 
-
     # Generate unique ID and create result directory
     unique_id = generate_unique_id()
     result_dir = os.path.join(os.getenv("APP_RESULT_PATH", "/shared/result"), unique_id)
     test_folder_dir = os.path.join(result_dir, "test_folder")
     ground_truth_dir = os.path.join(result_dir, "ground_truth")
     sampled_dir = os.path.join(result_dir, "sampled")
-    
+                               
     logger.info(f"Generated unique_id: {unique_id}, result_dir: {result_dir}")
     modelname_dir = os.path.join(os.getenv("APP_MODEL_PATH", "/shared/models"), model_name)
     modelfile_dir = os.path.join(os.getenv("APP_MODEL_PATH", "/shared/models"), model_name, "model", model_file)
@@ -86,10 +82,9 @@ def predict():
 
     # Save uploaded file(s)
     for file in test_files:
-        file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))  # Get only the filename
+        file_path = os.path.join(test_folder_dir, os.path.basename(file.filename))
         file.save(file_path)
         logger.info(f"Saved file: {file_path}")
-
 
     # Load and process mapping file if it exists
     mapping_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "mapping.csv")
@@ -98,7 +93,7 @@ def predict():
     if os.path.exists(mapping_path):
         with open(mapping_path, "r") as mapping_file:
             reader = csv.reader(mapping_file)
-            next(reader)  # Skip header
+            next(reader) 
 
             uploaded_filenames = {os.path.basename(file.filename) for file in test_files}
             sampled_path = os.path.join(modelname_dir, "sampled")
@@ -143,7 +138,7 @@ def predict():
             if all_samples_found:
                 # If all samples were found, proceed to /evaluation
                 eval_response = requests.post(f"{base_url}/evaluation", json={
-                     "unique_id": unique_id,
+                    "unique_id": unique_id,
                     "model_path": modelfile_dir,
                     "model_name": model_name,
                     "dataset_name": dataset_name,
@@ -175,7 +170,7 @@ def predict():
                     return jsonify({"error": "Sampling failed."}), 500
                 
                 eval_response = requests.post(f"{base_url}/evaluation", json={
-                     "unique_id": unique_id,
+                    "unique_id": unique_id,
                     "model_path": modelfile_dir,
                     "model_name": model_name,
                     "dataset_name": dataset_name,
@@ -241,7 +236,20 @@ def sample():
             "--data_name", dataset_name,
             "--data_dir", result_dir,
             "--out_dir", sampled_dir,
-            "--model_path", model_path
+            "--model_path", model_path,
+            "--image_size", "256",
+            "--num_channels", "128",
+            "--class_cond", "False",
+            "--num_res_blocks", "2",
+            "--num_heads", "1",
+            "--learn_sigma", "True",
+            "--use_scale_shift_norm", "False",
+            "--attention_resolutions", "16",
+            "--diffusion_steps", "1000",
+            "--noise_schedule", "linear",
+            "--rescale_learned_sigmas", "False",
+            "--rescale_timesteps", "False",
+            "--num_ensemble", "5"
         ])
     elif model_name == "TBConvl-Net":
         sample_process = subprocess.run([
@@ -254,15 +262,6 @@ def sample():
     else:
         logger.error(f"Unsupported model_name: {model_name}")
         return jsonify({"error": f"Unsupported model_name: {model_name}"}), 400
-
-    
-    # sample_process = subprocess.run([
-    #     "python", "scripts/segmentation_sample.py",
-    #     "--data_name", dataset_name,
-    #     "--data_dir", result_dir,
-    #     "--out_dir", sampled_dir,
-    #     "--model_path", model_path
-    # ])
 
 
     if sample_process.returncode == 0:
@@ -302,12 +301,6 @@ def evaluation():
     else:
         logger.error(f"Unsupported model_name: {model_name}")
         return jsonify({"error": f"Unsupported model_name: {model_name}"}), 400
-
-    # eval_output = subprocess.check_output([
-    #     "python", "/shared/models/MedSegDiffv2/segmentation_eval.py",
-    #     "--inp_pth", sampled_dir,
-    #     "--out_pth", ground_truth_dir
-    # ], text=True)
 
     metrics = {}
     for line in eval_output.strip().splitlines():

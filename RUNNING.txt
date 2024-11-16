@@ -1,0 +1,87 @@
+ai-service   |  * Running on http://172.18.0.2:3000
+ai-service   | 2024-11-16 03:53:03,480 - werkzeug - INFO - Press CTRL+C to quit
+ai-service   | 2024-11-16 03:53:03,482 - werkzeug - INFO -  * Restarting with stat
+ai-service   | 2024-11-16 03:53:04,135 - werkzeug - WARNING -  * Debugger is active!
+ai-service   | 2024-11-16 03:53:04,137 - werkzeug - INFO -  * Debugger PIN: 994-409-962
+web-service  | 2024-11-16 03:53:04,143 - app.utils - INFO - Logging has been configured.
+web-service  | 2024-11-16 03:53:04,171 - app.utils - INFO - Logging has been configured.
+web-service  | 2024-11-16 03:53:04,187 - app.utils - INFO - Logging has been configured.
+web-service  | 2024-11-16 03:53:04,187 - app.utils - INFO - Logger initialized.
+web-service  |  * Serving Flask app 'main.py'
+web-service  |  * Debug mode: off
+web-service  | 2024-11-16 03:53:04,194 - werkzeug - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+web-service  |  * Running on all addresses (0.0.0.0)
+web-service  |  * Running on http://127.0.0.1:8000
+web-service  |  * Running on http://172.18.0.3:8000
+web-service  | 2024-11-16 03:53:04,195 - werkzeug - INFO - Press CTRL+C to quit
+web-service  | 2024-11-16 03:53:37,602 - app.utils - INFO - Received request at /img_upload
+web-service  | 2024-11-16 03:53:37,622 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:37] "GET /img_upload HTTP/1.1" 200 -
+web-service  | 2024-11-16 03:53:37,642 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:37] "GET /static/css/main.css HTTP/1.1" 304 -
+web-service  | 2024-11-16 03:53:37,710 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:37] "GET /static/images/Background.jpg HTTP/1.1" 304 -
+web-service  | 2024-11-16 03:53:38,963 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:38] "GET /get_datasets?taskType=Skin_Lesion HTTP/1.1" 200 -
+web-service  | 2024-11-16 03:53:39,920 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:39] "GET /get_model_names?taskType=Skin_Lesion&dataset=ISIC HTTP/1.1" 200 -
+web-service  | 2024-11-16 03:53:40,739 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:40] "GET /get_model_files?modelName=MedSegDiffv2 HTTP/1.1" 200 -
+web-service  | 2024-11-16 03:53:43,675 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 03:53:43] "POST /verify_images_in_mapping HTTP/1.1" 200 -
+ai-service   | 2024-11-16 03:53:44,594 - __main__ - INFO - Received request at /predict
+ai-service   | 2024-11-16 03:53:44,597 - __main__ - INFO - Generated unique_id: 2245635317, result_dir: /shared/result/2245635317
+ai-service   | 2024-11-16 03:53:44,640 - __main__ - INFO - Saved file: /shared/result/2245635317/test_folder/ISIC_0012643.jpg
+ai-service   | 2024-11-16 03:53:44,671 - __main__ - INFO - Copied ground truth image: /shared/data/Skin_Lesion/ISIC/Ground_truth/ISIC_0012643_segmentation.png to /shared/result/2245635317/ground_truth/ISIC_0012643_segmentation.png
+ai-service   | 2024-11-16 03:53:44,677 - __main__ - INFO - Mapping file created at /shared/result/2245635317/mapping.csv
+ai-service   | 2024-11-16 03:53:44,681 - __main__ - WARNING - Sample not found for image: ISIC_0012643.jpg
+ai-service   | 2024-11-16 03:53:44,691 - __main__ - INFO - Running sample with unique_id: 2245635317, dataset_name: ISIC, model_name: MedSegDiffv2, model_path: /shared/models/MedSegDiffv2/model/emasavedmodel_0.9999_030000.pt
+ai-service   | Distributed training is disabled.
+ai-service   | 2024-11-16 03:53:53,613 - __main__ - INFO - Using device: cpu
+ai-service   | 2024-11-16 03:53:53,614 - __main__ - INFO - Distributed training is disabled.
+ai-service   | 2024-11-16 03:53:53,627 - __main__ - INFO - Output directory: /shared/result/2245635317/sampled
+ai-service   | 2024-11-16 03:53:53,630 - __main__ - INFO - Setting up data transformations...
+ai-service   | 2024-11-16 03:53:53,631 - __main__ - INFO - Loading dataset...
+ai-service   | 2024-11-16 03:53:53,682 - __main__ - INFO - Creating model and diffusion...
+ai-service   | 2024-11-16 03:53:54,988 - __main__ - INFO - Loading model checkpoint...
+ai-service   | 2024-11-16 03:54:02,294 - __main__ - INFO - Starting sampling process...
+ai-service   | 2024-11-16 03:54:02,295 - __main__ - INFO - Number of samples to process: 1
+ai-service   | 2024-11-16 03:54:02,379 - __main__ - INFO - Processing sample 1/1, ID: 0012643
+⠧ Processing... no dpm-solver
+ai-service   | 2024-11-16 04:30:49,910 - __main__ - INFO - Sample 1 time: 2207528.28 ms
+ai-service   | /shared/models/MedSegDiffv2/segmentation_sample.py:167: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+ai-service   |   co = th.tensor(cal_out, device=device)
+⠙ Processing... no dpm-solver
+ai-service   | 2024-11-16 05:07:12,557 - __main__ - INFO - Sample 2 time: 2182645.30 ms
+⠙ Processing... no dpm-solver
+ai-service   | 2024-11-16 05:43:40,575 - __main__ - INFO - Sample 3 time: 2188016.45 ms
+⠙ Processing... no dpm-solver
+ai-service   | 2024-11-16 06:21:47,192 - __main__ - INFO - Sample 4 time: 2286615.24 ms
+⠼ Processing... no dpm-solver
+ai-service   | 2024-11-16 06:58:39,820 - __main__ - INFO - Sample 5 time: 2212624.96 ms
+ai-service   | 2024-11-16 06:58:39,897 - __main__ - INFO - Saved ensemble output image: /shared/result/2245635317/sampled/0012643_output_ens.jpg
+ai-service   | 2024-11-16 06:58:39,899 - __main__ - INFO - Sample 1/1 completed. Remaining time: 0:00:00
+✔ Process Completed!
+ai-service   | 2024-11-16 06:58:42,656 - __main__ - INFO - segmentation_sample.py executed successfully.
+ai-service   | 2024-11-16 06:58:42,701 - werkzeug - INFO - 127.0.0.1 - - [16/Nov/2024 06:58:42] "POST /sample HTTP/1.1" 200 -
+ai-service   | 2024-11-16 06:58:42,751 - __main__ - INFO - Running evaluation with unique_id: 2245635317, model_name: /shared/models/MedSegDiffv2/model/emasavedmodel_0.9999_030000.pt
+ai-service   | 2024-11-16 06:58:49,400 - __main__ - INFO - Evaluation metrics: {'IoU': 0.0642, 'DiceScore': 0.11361, 'Accuracy': 0.69284, 'Sensitivity': 0.11196, 'Specificity': 0.88882, 'F1Score': 0.11361}
+ai-service   | 2024-11-16 06:58:49,401 - werkzeug - INFO - 127.0.0.1 - - [16/Nov/2024 06:58:49] "POST /evaluation HTTP/1.1" 200 -
+ai-service   | 2024-11-16 06:58:49,404 - __main__ - INFO - Evaluation metrics after sampling: {'Accuracy': 0.69284, 'DiceScore': 0.11361, 'F1Score': 0.11361, 'IoU': 0.0642, 'Sensitivity': 0.11196, 'Specificity': 0.88882}
+ai-service   | 2024-11-16 06:58:49,424 - __main__ - INFO - Data successfully saved for Unique ID: 2245635317
+ai-service   | 2024-11-16 06:58:49,426 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "POST /predict HTTP/1.1" 200 -
+web-service  | 2024-11-16 06:58:49,521 - app.utils - INFO - Found result entry for Unique ID 2245635317: {'Unique ID': '2245635317', 'Type': 'Image', 'Test_image': '/shared/result/2245635317/test_folder', 'ground_truth': '/shared/result/2245635317/ground_truth', 'Dataset Name': 'ISIC', 'Model': '/shared/models/MedSegDiffv2/model/emasavedmodel_0.9999_030000.pt', 'sampled_path': '/shared/result/2245635317/sampled', 'metrics': {'Accuracy': 0.69284, 'DiceScore': 0.11361, 'F1Score': 0.11361, 'IoU': 0.0642, 'Sensitivity': 0.11196, 'Specificity': 0.88882}}
+web-service  | 2024-11-16 06:58:49,541 - app.utils - INFO - Matched image set for ID 0012643: {'test_image': '/shared/result/2245635317/test_folder/ISIC_0012643.jpg', 'ground_truth_image': '/shared/result/2245635317/ground_truth/ISIC_0012643_segmentation.png', 'sampled_image': '/shared/result/2245635317/sampled/0012643_output_ens.jpg'}
+web-service  | 2024-11-16 06:58:49,588 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /result/2245635317 HTTP/1.1" 200 -
+web-service  | 2024-11-16 06:58:49,663 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /static/css/main.css HTTP/1.1" 304 -
+web-service  | 2024-11-16 06:58:49,671 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /shared/result/2245635317/ground_truth/ISIC_0012643_segmentation.png HTTP/1.1" 200 -
+web-service  | 2024-11-16 06:58:49,671 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /shared/result/2245635317/test_folder/ISIC_0012643.jpg HTTP/1.1" 200 -
+web-service  | 2024-11-16 06:58:49,688 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /static/images/Background.jpg HTTP/1.1" 304 -
+web-service  | 2024-11-16 06:58:49,695 - werkzeug - INFO - 172.18.0.1 - - [16/Nov/2024 06:58:49] "GET /shared/result/2245635317/sampled/0012643_output_ens.jpg HTTP/1.1" 200 -
+Gracefully stopping... (press Ctrl+C again to force)
+[+] Stopping 2/2
+ ✔ Container web-service  Stopped                       10.5s 
+ ✔ Container ai-service   Stopped                        0.6s 
+canceled
+canceled
+(finalproj_train) PS D:\Personal\UNSW\Ongoing\COMP9900\Code\capstone-project-2024-t3-9900t15apotatoes> docker-compose down
+[+] Running 3/3
+ ✔ Container web-service                                                 Removed                                       
+                        0.0s
+ ✔ Container ai-service                                                  Removed                                       
+                        0.0s
+ ✔ Network capstone-project-2024-t3-9900t15apotatoes_final_code_network  Removed                                       
+                        0.3s

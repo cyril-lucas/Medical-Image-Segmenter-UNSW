@@ -9,8 +9,7 @@ import re
 load_dotenv()
 
 def load_environment():
-    """Conditionally load .env file if running outside Docker."""
-    if not os.getenv("DOCKER_ENV"):  # DOCKER_ENV=1 in docker-compose.yml if in Docker
+    if not os.getenv("DOCKER_ENV"):  
         env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
         if not load_dotenv(env_path):
             print("Error: .env file could not be loaded.")
@@ -18,16 +17,6 @@ def load_environment():
 
 
 def verify_images_in_mapping(task_type, dataset_name, image_files):
-    """Verify if the provided image files exist in the mapping.csv file for the given dataset.
-
-    Args:
-        task_type (str): The task type.
-        dataset_name (str): The dataset name.
-        image_files (list): List of image filenames to verify.
-
-    Returns:
-        list: List of image filenames that are missing from the mapping.csv file.
-    """
     mapping_path = os.path.join(os.getenv("APP_DATA_PATH", "/shared/data"), task_type, dataset_name, "mapping.csv")
     if not os.path.exists(mapping_path):
         raise FileNotFoundError(f"Mapping file not found at {mapping_path}")
@@ -44,9 +33,8 @@ def verify_images_in_mapping(task_type, dataset_name, image_files):
     return missing_images
 
 def setup_logging():
-    """Set up logging to both file and console."""
     log_dir = os.getenv("APP_LOG_PATH", "/shared/logs")
-    os.makedirs(log_dir, exist_ok=True)  # Ensure the log directory exists
+    os.makedirs(log_dir, exist_ok=True)  
     log_file = os.path.join(log_dir, "app.log")
 
     logging.basicConfig(
@@ -63,7 +51,6 @@ def setup_logging():
     return logger
 
 def check_essential_paths(logger):
-    """Check if essential paths and environment variables are loaded correctly."""
     required_paths = {
         "APP_DATA_PATH": os.getenv("APP_DATA_PATH"),
         "APP_LOG_PATH": os.getenv("APP_LOG_PATH"),
@@ -81,21 +68,18 @@ def check_essential_paths(logger):
             sys.exit(1)
 
 def get_model_list():
-    """Retrieve a list of model files in the model directory."""
     model_folder = os.getenv("APP_MODEL_PATH", "/shared/models")
     if not os.path.isdir(model_folder):
         raise FileNotFoundError(f"Model folder not found at {model_folder}")
     return [f for f in os.listdir(model_folder) if f.endswith((".pt", ".pth", ".pkl"))]
 
 def get_dataset_list():
-    """Retrieve a list of datasets from the ground truth folder."""
     ground_truth_folder = os.path.join(os.getenv("APP_DATA_PATH"), "ground_truth")
     if not os.path.isdir(ground_truth_folder):
         raise FileNotFoundError(f"Ground truth folder not found at {ground_truth_folder}")
     return [folder for folder in os.listdir(ground_truth_folder) if os.path.isdir(os.path.join(ground_truth_folder, folder))]
 
 def get_task_types_from_data():
-    """Retrieve a list of unique task types from the data record JSON."""
     data_record_path = os.path.join(os.getenv("APP_DATA_PATH"), "data_record.json")
     if not os.path.exists(data_record_path):
         raise FileNotFoundError(f"Data record file not found at {data_record_path}")
@@ -105,7 +89,6 @@ def get_task_types_from_data():
     return {record["Task Type"] for record in records if record["Active"]}
 
 def get_datasets_by_task(task_type):
-    """Retrieve a list of datasets based on the specified task type."""
     data_record_path = os.path.join(os.getenv("APP_DATA_PATH"), "data_record.json")
     if not os.path.exists(data_record_path):
         raise FileNotFoundError(f"Data record file not found at {data_record_path}")
@@ -114,12 +97,6 @@ def get_datasets_by_task(task_type):
         records = json.load(file)
     return {record["Dataset Name"] for record in records if record["Task Type"] == task_type and record["Active"]}
 
-# def get_models_by_dataset(task_type, dataset_name):
-#     """Retrieve model files available in the specified dataset's model folder."""
-#     model_folder = os.path.join(os.getenv("APP_DATA_PATH"), task_type, dataset_name, "model")
-#     if not os.path.isdir(model_folder):
-#         raise FileNotFoundError(f"Model folder not found at {model_folder}")
-#     return [f for f in os.listdir(model_folder) if f.endswith((".pt", ".pkl"))]
 
 def extract_id(filename, pattern):
     match = re.search(pattern, filename, re.IGNORECASE)

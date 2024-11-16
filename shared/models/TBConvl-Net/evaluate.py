@@ -42,17 +42,7 @@ transform = transforms.Compose([
 test_dataset = SegmentationDataset(args.test_images_dir, args.test_masks_dir, transform=transform)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-# Evaluation function
 def evaluate_metrics_pytorch(model, dataloader, device):
-    """
-    Evaluates various metrics for segmentation performance.
-    Args:
-        model (nn.Module): Trained model.
-        dataloader (DataLoader): DataLoader for test data.
-        device (str): Device to run the model on.
-    Returns:
-        dict: Dictionary containing average metrics.
-    """
     model.eval()
     all_metrics = {
         'Accuracy': [],
@@ -69,12 +59,11 @@ def evaluate_metrics_pytorch(model, dataloader, device):
             masks = masks.to(device)
 
             outputs = model(images)
-            preds = outputs > 0.5  # Binary mask
+            preds = outputs > 0.5 
 
             preds = preds.cpu().numpy().astype(np.uint8)
             masks = masks.cpu().numpy().astype(np.uint8)
-            masks = (masks > 0).astype(np.uint8)  # Convert to binary masks
-
+            masks = (masks > 0).astype(np.uint8)  
             for pred, mask in zip(preds, masks):
                 pred_flat = pred.flatten()
                 mask_flat = mask.flatten()
@@ -87,9 +76,7 @@ def evaluate_metrics_pytorch(model, dataloader, device):
                 dice = f1_score(mask_flat, pred_flat, zero_division=0)
                 specificity = tn / (tn + fp + 1e-8)
                 sensitivity = recall_score(mask_flat, pred_flat, zero_division=0)
-                precision = precision_score(mask_flat, pred_flat, zero_division=0)
-                recall = sensitivity
-                f1 = dice  # F1-Score is the same as Dice coefficient for binary classification
+                f1 = dice 
 
                 all_metrics['IoU'].append(iou)
                 all_metrics['Dice Coefficient'].append(dice)

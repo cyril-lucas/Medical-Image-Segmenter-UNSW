@@ -12,7 +12,7 @@ from app.utils import (
     verify_images_in_mapping,
     extract_id,
 )
-from app.data_setup import process_dataset_form  # Assuming process_data_setup_form exists in addon/data_setup.py
+from app.data_setup import process_dataset_form 
 from datetime import datetime
 import shutil
 from fpdf import FPDF
@@ -36,7 +36,7 @@ def index():
         if not records:
             no_data = True
     except FileNotFoundError:
-        no_data = True  # data_record.json not found
+        no_data = True 
     
     return render_template('index.html', records=records, no_data=no_data)
 
@@ -50,13 +50,6 @@ def get_datasets():
     task_type = request.args.get('taskType')
     datasets = get_datasets_by_task(task_type)
     return jsonify(datasets=list(datasets))
-
-# @main.route('/get_models')
-# def get_models():
-#     dataset = request.args.get('dataset')
-#     task_type = request.args.get('taskType')
-#     models = get_models_by_dataset(task_type, dataset)
-#     return jsonify(models=list(models))
 
 @main.route('/get_model_names', methods=['GET'])
 def get_model_names():
@@ -77,7 +70,6 @@ def get_model_files():
     if not os.path.isdir(model_folder):
         return jsonify({'modelFiles': []})
     
-    # Retrieve files with extensions .pt, .pkl, and .pth
     model_files = [file for file in os.listdir(model_folder) if file.endswith((".pt", ".pkl", ".pth"))]
     return jsonify(modelFiles=model_files)
 
@@ -199,7 +191,7 @@ def datasetup():
 @main.route("/folder_upload", methods=["GET", "POST"])
 def folder_upload():
     logger.info("Received request at /folder_upload")
-    task_types = get_task_types_from_data()  # Task types for dropdown
+    task_types = get_task_types_from_data() 
     ai_host = os.getenv("AI_HOST", "localhost")
     ai_port = os.getenv("AI_PORT", "3000")
     models, datasets, model_files = [], [], []
@@ -285,7 +277,7 @@ def folder_upload():
 @main.route("/img_upload", methods=["GET", "POST"])
 def img_upload():
     logger.info("Received request at /img_upload")
-    task_types = get_task_types_from_data()  # Task types for dropdown
+    task_types = get_task_types_from_data() 
     ai_host = os.getenv("AI_HOST", "localhost")
     ai_port = os.getenv("AI_PORT", "3000")
     models, datasets, model_files = [], [], []
@@ -390,7 +382,6 @@ def result(result_id):
 
     # Initialize dictionaries to store image paths
     try:
-        # Log extracted IDs and filenames
         test_images = {
             extract_id(file, r"ISIC_(\d+)\.jpg"): f"{result_id}/test_folder/{file}"
             for file in os.listdir(f"{RESULT_PATH}/{result_id}/test_folder")
@@ -501,7 +492,7 @@ def download_pdf(result_id):
     pdf.ln(5)
     
     # Center the table on the page
-    table_x = (210 - 80) / 2  # Center the 80mm wide table on an A4 page (210mm wide)
+    table_x = (210 - 80) / 2  
     pdf.set_xy(table_x, pdf.get_y())
 
     # Create table headers
@@ -517,9 +508,9 @@ def download_pdf(result_id):
         pdf.set_x(table_x)
         pdf.cell(40, 10, key, border=1, align="C")
         pdf.cell(40, 10, str(result["metrics"].get(key, 'N/A')), border=1, align="C")
-        pdf.ln()  # Move to the next row
+        pdf.ln()  
 
-    pdf.ln(10)  # Add space below the scores section
+    pdf.ln(10) 
 
     # Image Table Section Title
     pdf.set_font("Arial", "B", 14)
@@ -528,39 +519,34 @@ def download_pdf(result_id):
     
     # Adjusted Table Headers for Images
     headers = ["Test Image", "Ground Truth", "Sampled Image"]
-    cell_width = 60  # Slightly larger width to center the table
+    cell_width = 60 
     for header in headers:
         pdf.cell(cell_width, 10, header, border=1, align="C")
-    pdf.ln()  # Move to the next row
+    pdf.ln() 
 
     # Image Rows
     pdf.set_font("Arial", "", 10)
-    padding = 5  # Padding around each image
-    image_height = 60  # Reduced image height to fit with padding
+    padding = 5 
+    image_height = 60  
     for images in matched_images:
-        # Check if a new page is needed for the next row
         if pdf.get_y() + image_height + 2 * padding > pdf.page_break_trigger:
             pdf.add_page()
-            # Reprint the header row on the new page
             for header in headers:
                 pdf.cell(cell_width, 10, header, border=1, align="C")
-            pdf.ln()  # Move to the next row
+            pdf.ln() 
 
-        y_start = pdf.get_y()  # Starting y position for images in the row
+        y_start = pdf.get_y()  
 
-        # Reserve space for each image and add them using specific coordinates
-        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Test Image
-        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Ground Truth
-        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  # Reserve space for Sampled Image
-        pdf.ln()  # Move to the next row
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1) 
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  
+        pdf.cell(cell_width, image_height + 2 * padding, "", border=1)  
+        pdf.ln() 
 
-        # Adjust x and y coordinates for each image to center them within cells
-        x_start = 15  # Left margin offset to ensure images stay within page
+        x_start = 15 
         pdf.image(images["test_image"], x=x_start + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
         pdf.image(images["ground_truth_image"], x=x_start + cell_width + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
         pdf.image(images["sampled_image"], x=x_start + 2 * cell_width + padding, y=y_start + padding, w=cell_width - 2 * padding, h=image_height)
 
-    # Save and return the PDF
     pdf_file_path = f"/tmp/Segmentation_Result_{result_id}.pdf"
     pdf.output(pdf_file_path)
     return send_file(pdf_file_path, as_attachment=True, download_name=f"Segmentation_Result_{result_id}.pdf")

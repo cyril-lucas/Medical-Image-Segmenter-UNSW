@@ -9,13 +9,15 @@ class ISICDataset(Dataset):
 
         # Load mapping.csv to get image and ground truth paths
         mapping_file = os.path.join(data_path, 'mapping.csv')
+        if not os.path.exists(mapping_file):
+            raise FileNotFoundError(f"Mapping file not found at: {mapping_file}")
+        
         df = pd.read_csv(mapping_file)
         
-        # Adjusted column names to match mapping.csv structure
-        self.image_paths = df['test_image_path'].apply(lambda x: os.path.join(data_path, x)).tolist()
-        self.mask_paths = df['ground_truth_path'].apply(lambda x: os.path.join(data_path, x)).tolist()
+        # Use the correct column names from mapping.csv
+        self.image_paths = df['test_image_path'].apply(lambda x: os.path.join(data_path, x) if not os.path.isabs(x) else x).tolist()
+        self.mask_paths = df['ground_truth_path'].apply(lambda x: os.path.join(data_path, x) if not os.path.isabs(x) else x).tolist()
 
-        
         # Store transform and data path
         self.transform = transform
 
@@ -42,4 +44,4 @@ class ISICDataset(Dataset):
         # Extract image name for reference
         name = os.path.basename(img_path)
 
-        return (img, mask, name)
+        return img, mask, name

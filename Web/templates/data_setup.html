@@ -211,10 +211,10 @@
           statusMessage.style.color = "red";
         } else {
           statusMessage.innerText = `${count} image(s) selected`;
-          statusMessage.style.color = "red"; // Initially set to red until ground truth is validated
+          statusMessage.style.color = "red";
         }
 
-        validateGroundTruthImages(); // Call to ensure both validations are checked
+        validateGroundTruthImages();
         checkFormValidity();
       }
 
@@ -268,10 +268,9 @@
       }
 
       function showProcessingModal(event) {
-        event.preventDefault(); // Prevents default form submission
+        event.preventDefault();
         document.getElementById("processingModal").style.display = "flex";
 
-        // Convert form data to include replacement flag if confirmed
         const formData = new FormData(document.getElementById("dataSetupForm"));
         formData.set(
           "replace_existing",

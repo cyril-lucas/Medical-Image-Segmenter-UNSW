@@ -4,10 +4,7 @@ from torch.utils.data import Dataset
 
 
 class SegmentationDataset(Dataset):
-    """
-    Custom Dataset for image segmentation tasks.
-    Expects images in 'x' folder and masks in 'y' folder.
-    """
+
     def __init__(self, images_dir, masks_dir, transform=None):
         super(SegmentationDataset, self).__init__()
         self.images_dir = images_dir

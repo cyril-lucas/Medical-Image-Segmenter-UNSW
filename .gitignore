@@ -4,6 +4,7 @@ shared/logs/*
 shared/result/*
 shared/models/**/sampled/
 shared/models/**/model/
+
 # Allow the folders themselves to remain in version control
 !shared/data/.gitkeep
 !shared/logs/.gitkeep

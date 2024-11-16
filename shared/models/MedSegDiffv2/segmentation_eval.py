@@ -7,7 +7,6 @@ from PIL import Image
 import argparse
 import os
 
-# Add the current directory to the Python path
 sys.path.append(".")
 
 def iou(outputs: np.array, labels: np.array):
@@ -18,7 +17,6 @@ def iou(outputs: np.array, labels: np.array):
     return iou.mean()
 
 class DiceCoeff(Function):
-    """Dice coeff for individual examples"""
 
     @staticmethod
     def forward(ctx, input, target):
@@ -44,17 +42,16 @@ class DiceCoeff(Function):
 
 
 def dice_coeff(input, target):
-    """Dice coeff for batches"""
     s = torch.FloatTensor(1).to(device=input.device).zero_()
     for i, c in enumerate(zip(input, target)):
-        s = s + DiceCoeff.apply(c[0], c[1])  # Use `apply` to call the static method directly
+        s = s + DiceCoeff.apply(c[0], c[1]) 
 
     return s / (i + 1)
 
 def calculate_metrics(pred, gt):
     SMOOTH = 1e-6
-    pred = pred > 0.5  # Thresholding for binary predictions
-    gt = gt > 0.5  # Thresholding for binary ground truth
+    pred = pred > 0.5
+    gt = gt > 0.5 
 
     tp = (pred & gt).sum().float()
     tn = ((~pred) & (~gt)).sum().float()

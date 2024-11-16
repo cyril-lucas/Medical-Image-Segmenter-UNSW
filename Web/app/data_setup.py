@@ -1,5 +1,4 @@
 import os
-import shutil
 import json
 import pandas as pd
 from app.utils import setup_logging
@@ -10,7 +9,6 @@ logger = setup_logging()
 
 
 def generate_unique_id(json_file):
-    """Generate a 10-digit unique ID based on the current timestamp and ensure uniqueness in data_record.json."""
     unique_id = int(time.time() * 1000) % 10000000000
     with open(json_file, 'r') as f:
         records = json.load(f)
@@ -19,7 +17,6 @@ def generate_unique_id(json_file):
     return unique_id
 
 def get_directory_size(directory):
-    """Calculate directory size in MB or GB."""
     total_size = sum(
         os.path.getsize(os.path.join(directory, f)) 
         for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))
@@ -30,7 +27,6 @@ def get_directory_size(directory):
         return f"{total_size / 1e9:.2f} GB"
 
 def update_json_record(json_file, unique_id, task_type, dataset_name, test_count, test_size, gt_count, gt_size, active_status):
-    """Update JSON file with dataset info."""
     with open(json_file, "r+") as f:
         records = json.load(f)
 
@@ -73,7 +69,7 @@ def process_dataset_form(task_type, dataset_name, test_images, ground_truth_imag
         logger.info("Mapping test images to ground truth images.")
         for test_image in test_images:
             test_id = os.path.splitext(test_image.filename)[0].split('_')[-1]
-            test_image_filename = os.path.basename(test_image.filename)  # Extracts only the filename
+            test_image_filename = os.path.basename(test_image.filename) 
             gt_image_filename = f"{dataset_name}_{test_id}_Segmentation.png"
             # Generate possible ground truth filenames
             possible_gt_filenames = [

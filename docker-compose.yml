@@ -1,8 +1,8 @@
 services:
   ai:
     build:
-      context: ./AI # Path to the AI service
-      dockerfile: Dockerfile # Ensure this matches your AI Dockerfile name
+      context: ./AI
+      dockerfile: Dockerfile
     container_name: ai-service
     environment:
       - DOCKER_ENV=1
@@ -15,15 +15,15 @@ services:
     ports:
       - "${AI_PORT}:${AI_PORT}"
     volumes:
-      - ./shared:/shared # Mount shared data volume
+      - ./shared:/shared
     networks:
       - final_code_network
     restart: always
 
   web:
     build:
-      context: ./Web # Path to the Web service
-      dockerfile: Dockerfile # Ensure this matches your Web Dockerfile name
+      context: ./Web
+      dockerfile: Dockerfile
     container_name: web-service
     environment:
       - DOCKER_ENV=1 # This prevents .env from being loaded in main.py
@@ -39,23 +39,12 @@ services:
     ports:
       - "${WEB_PORT}:${WEB_PORT}"
     volumes:
-      - ./shared:/shared # Mount shared data volume
+      - ./shared:/shared
     networks:
       - final_code_network
     depends_on:
       - ai
     restart: always
-
-  # data_setup:
-  #   build:
-  #     context: ./Dataset_setup
-  #     dockerfile: Dockerfile.data_setup
-  #   container_name: data-setup-service
-  #   volumes:
-  #     - ./shared:/app/shared # Mount the shared directory for data access
-  #   networks:
-  #     - final_code_network
-  #   entrypoint: ["python", "/app/data_setup.py"]
 
 networks:
   final_code_network:

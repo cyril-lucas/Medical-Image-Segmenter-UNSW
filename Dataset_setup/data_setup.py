@@ -40,14 +40,6 @@ class DatasetFormApp:
         self.dataset_name_entry.grid(row=2, column=1, sticky="w")
         self.dataset_name_entry.bind("<FocusOut>", format_dataset_name)
 
-
-        # # Model Files Upload
-        # tk.Label(root, text="Model Files:").grid(row=3, column=0, sticky="w")
-        # self.model_files = []
-        # tk.Button(root, text="Upload", command=self.upload_model_files).grid(row=3, column=1, sticky="w")
-        # self.model_files_label = tk.Label(root, text="", fg="red")
-        # self.model_files_label.grid(row=3, column=2, sticky="w")
-
         # Test Images Folder
         tk.Label(root, text="Test Images Folder:").grid(row=4, column=0, sticky="w")
         self.test_images_path = tk.StringVar()
@@ -79,7 +71,7 @@ class DatasetFormApp:
         if not os.path.exists(self.json_file):
             os.makedirs(os.path.dirname(self.json_file), exist_ok=True)
             with open(self.json_file, "w") as f:
-                json.dump([], f)  # Initialize with an empty list
+                json.dump([], f)  
 
     def show_other_task_entry(self, *args):
         """Show entry field if 'Other' is selected as Task Type"""
@@ -89,13 +81,6 @@ class DatasetFormApp:
         else:
             self.other_task_label.grid_forget()
             self.other_task_entry.grid_forget()
-
-    # def upload_model_files(self):
-    #     file_paths = filedialog.askopenfilenames(filetypes=[("Model files", "*.pt *.pkl")])
-    #     if file_paths:
-    #         self.model_files = file_paths
-    #         self.model_files_label.config(text=f"{len(self.model_files)} model(s) selected", fg="green")
-    #         self.check_ready_to_submit()
 
     def format_other_task_type(self, event):
         """Remove leading spaces from 'Other' task type entry"""
@@ -152,10 +137,8 @@ class DatasetFormApp:
 
 
     def check_ready_to_submit(self):
-        """Enable the submit button only if image counts match and model files are uploaded"""
         test_count = getattr(self, 'test_images_count', 0)
         gt_count = getattr(self, 'ground_truth_count', 0)
-        # model_count = len(self.model_files)
 
         if test_count == gt_count and gt_count > 0:
             self.submit_button.config(state=tk.NORMAL)
@@ -163,7 +146,6 @@ class DatasetFormApp:
             self.submit_button.config(state=tk.DISABLED)
 
     def reset_form(self):
-        """Reset all fields in the form"""
         self.task_type.set("")
         self.dataset_name_entry.delete(0, tk.END)
         self.test_images_path.set("")
@@ -175,30 +157,22 @@ class DatasetFormApp:
         self.ground_truth_count = 0
 
     def generate_unique_id(self):
-        """Generate a 10-digit unique ID based on current time"""
         return int(time.time() * 1000) % 10000000000
 
     def get_directory_size(self, directory):
-        """Calculate directory size in MB or GB"""
         total_size = sum(
             os.path.getsize(os.path.join(directory, f)) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))
         )
-        if total_size < 1e9:  # Less than 1 GB
+        if total_size < 1e9:  
             return f"{total_size / 1e6:.2f} MB"
         else:
             return f"{total_size / 1e9:.2f} GB"
-
-    # def update_json_record(self, task_type, dataset_name, test_count, test_size, gt_count, gt_size, model_count, active_status):
-    #     """Update JSON file with dataset info"""
-    #     with open(self.json_file, "r") as f:
-    #         records = json.load(f)
 
     def update_json_record(self, task_type, dataset_name, test_count, test_size, gt_count, gt_size, active_status):
         """Update JSON file with dataset info"""
         with open(self.json_file, "r") as f:
             records = json.load(f)
 
-        # Deactivate old records if dataset is replaced
         for record in records:
             if record["Task Type"] == task_type and record["Dataset Name"] == dataset_name:
                 record["Active"] = False
@@ -209,7 +183,6 @@ class DatasetFormApp:
             "Task Type": task_type,
             "Dataset Name": dataset_name,
             "Path": f"/shared/data/{task_type}/{dataset_name}",
-            # "Number of Models": model_count,
             "Number of Test Images": test_count,
             "Size of Test Images": test_size,
             "Number of Ground Truth Images": gt_count,
@@ -232,11 +205,9 @@ class DatasetFormApp:
             messagebox.showwarning("Incomplete Form", "Please fill in all fields.")
             return
 
-        # Define directories with the specified task type name
         base_dir = f"../shared/data/{task_type}/{dataset_name}"
         test_dir = os.path.join(base_dir, "Test_images")
         ground_truth_dir = os.path.join(base_dir, "Ground_truth")
-        # model_dir = os.path.join(base_dir, "model")
         mapping_file = os.path.join(base_dir, "mapping.csv")
 
         try:
@@ -248,11 +219,6 @@ class DatasetFormApp:
                     return
             os.makedirs(test_dir, exist_ok=True)
             os.makedirs(ground_truth_dir, exist_ok=True)
-            # os.makedirs(model_dir, exist_ok=True)
-
-            # Copy models to the model directory
-            # for model_file in self.model_files:
-            #     shutil.copy(model_file, model_dir)
 
             # Map images and save CSV
             test_images = [f for f in os.listdir(test_images_path) if f.endswith('.jpg') or f.endswith('.png')]
@@ -266,7 +232,6 @@ class DatasetFormApp:
                 gt_path = os.path.join(ground_truth_path, gt_image)
 
                 if os.path.exists(gt_path):
-                    # Copy files to their respective directories
                     shutil.copy(test_path, os.path.join(test_dir, test_image))
                     shutil.copy(gt_path, os.path.join(ground_truth_dir, gt_image))
 
@@ -288,8 +253,6 @@ class DatasetFormApp:
             if not unmapped_images:
                 test_size = self.get_directory_size(test_dir)
                 gt_size = self.get_directory_size(ground_truth_dir)
-                # model_count = len(self.model_files)
-                # self.update_json_record(task_type, dataset_name, len(test_images), test_size, len(data), gt_size, model_count, active_status=True)
                 self.update_json_record(task_type, dataset_name, len(test_images), test_size, len(data), gt_size, active_status=True)
                 messagebox.showinfo("Success", "Dataset processed and mapping file created successfully.")
                 self.reset_form()

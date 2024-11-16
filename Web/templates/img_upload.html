@@ -258,7 +258,7 @@
         if (file && /\.(png|jpe?g|bmp)$/i.test(file.name)) {
           imagePathDisplay.textContent = file.name;
           const img = document.createElement("img");
-          img.classList.add("image-preview", "single-image-preview"); // Add both classes
+          img.classList.add("image-preview", "single-image-preview");
           img.src = URL.createObjectURL(file);
           img.title = file.name;
           imagePreview.appendChild(img);
