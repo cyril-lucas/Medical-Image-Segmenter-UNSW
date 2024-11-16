@@ -67,14 +67,12 @@ class DatasetFormApp:
         self.reset_button.grid(row=8, column=1, pady=10)
 
     def initialize_json(self):
-        """Create JSON file if it doesn't exist"""
         if not os.path.exists(self.json_file):
             os.makedirs(os.path.dirname(self.json_file), exist_ok=True)
             with open(self.json_file, "w") as f:
                 json.dump([], f)  
 
     def show_other_task_entry(self, *args):
-        """Show entry field if 'Other' is selected as Task Type"""
         if self.task_type.get() == "Other":
             self.other_task_label.grid(row=1, column=0, sticky="w")
             self.other_task_entry.grid(row=1, column=1, sticky="w")
@@ -83,7 +81,6 @@ class DatasetFormApp:
             self.other_task_entry.grid_forget()
 
     def format_other_task_type(self, event):
-        """Remove leading spaces from 'Other' task type entry"""
         other_task_type = self.other_task_entry.get().strip()
         self.other_task_entry.delete(0, tk.END)
         self.other_task_entry.insert(0, other_task_type)
@@ -169,7 +166,6 @@ class DatasetFormApp:
             return f"{total_size / 1e9:.2f} GB"
 
     def update_json_record(self, task_type, dataset_name, test_count, test_size, gt_count, gt_size, active_status):
-        """Update JSON file with dataset info"""
         with open(self.json_file, "r") as f:
             records = json.load(f)
 

@@ -53,7 +53,6 @@ def get_datasets():
 
 @main.route('/get_model_names', methods=['GET'])
 def get_model_names():
-    """Retrieve model names from the models directory."""
     model_base_path = os.getenv('APP_MODEL_PATH')
     if not os.path.isdir(model_base_path):
         return jsonify({'models': []})

@@ -121,6 +121,7 @@ def main():
     total_time = 0
     for i, (b, m, path) in enumerate(data, start=1):
         loop_start_time = time.time()
+        time.sleep(0.05)
 
         # Move tensors to the selected device
         b = b.to(device)

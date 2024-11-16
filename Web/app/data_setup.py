@@ -21,7 +21,7 @@ def get_directory_size(directory):
         os.path.getsize(os.path.join(directory, f)) 
         for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))
     )
-    if total_size < 1e9:  # Less than 1 GB
+    if total_size < 1e9: 
         return f"{total_size / 1e6:.2f} MB"
     else:
         return f"{total_size / 1e9:.2f} GB"
