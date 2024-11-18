@@ -1,3 +1,4 @@
+dataset
 # Ignore contents of specific folders
 shared/data/*
 shared/logs/*
