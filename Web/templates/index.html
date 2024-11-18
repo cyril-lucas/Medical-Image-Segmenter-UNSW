@@ -22,6 +22,9 @@
       </div>
       <div class="nav-links">
         <a href="{{ url_for('main.index') }}" class="header-link">Home</a>
+        <a href="{{ url_for('main.datasetup') }}" class="header-link"
+          >Setup Dataset</a
+        >
         <a href="{{ url_for('main.img_upload') }}" class="header-link"
           >Segment Image</a
         >
@@ -39,8 +42,7 @@
       {% if no_data %}
       <!-- Display message if no data is available -->
       <p class="no-data-message">
-        No data in the server. Please add data by running
-        Dataset_setup/data_setup.py
+        No datasets available. Please set up a new dataset to get started.
       </p>
       {% else %}
       <!-- Data Table -->

@@ -1,26 +1,22 @@
 import copy
 import functools
 import os
-
 import blobfile as bf
 import torch as th
 import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
-
 from . import dist_util, logger
 from .fp16_util import MixedPrecisionTrainer
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
-
-# Removed Visdom for simplicity, can be added if required
 
 INITIAL_LOG_LOSS_SCALE = 20.0
 
 def visualize(img):
     _min = img.min()
     _max = img.max()
-    normalized_img = (img - _min) / (_max - _min)
+    normalized_img = (img - _min)/ (_max - _min)
     return normalized_img
 
 class TrainLoop:
@@ -43,7 +39,7 @@ class TrainLoop:
         fp16_scale_growth=1e-3,
         schedule_sampler=None,
         weight_decay=0.0,
-        lr_anneal_steps=0,
+        lr_anneal_steps=2,
     ):
         self.model = model
         self.dataloader = dataloader
@@ -54,7 +50,9 @@ class TrainLoop:
         self.microbatch = microbatch if microbatch > 0 else batch_size
         self.lr = lr
         self.ema_rate = (
-            [ema_rate] if isinstance(ema_rate, float) else [float(x) for x in ema_rate.split(",")]
+            [ema_rate]
+            if isinstance(ema_rate, float)
+            else [float(x) for x in ema_rate.split(",")]
         )
         self.log_interval = log_interval
         self.save_interval = save_interval
@@ -67,9 +65,7 @@ class TrainLoop:
 
         self.step = 0
         self.resume_step = 0
-
-        # Check if distributed is initialized, if not use 1 (single GPU or CPU)
-        self.global_batch = self.batch_size * (dist.get_world_size() if dist.is_initialized() else 1)
+        self.global_batch = self.batch_size * dist.get_world_size() if dist.is_initialized() else self.batch_size
 
         self.sync_cuda = th.cuda.is_available()
 
@@ -94,38 +90,39 @@ class TrainLoop:
                 for _ in range(len(self.ema_rate))
             ]
 
-        if th.cuda.is_available():
-            self.use_ddp = dist.is_initialized()  # Use DDP only if distributed training is initialized
-            if self.use_ddp:
-                self.ddp_model = DDP(
-                    self.model,
-                    device_ids=[dist_util.dev()],
-                    output_device=dist_util.dev(),
-                    broadcast_buffers=False,
-                    bucket_cap_mb=128,
-                    find_unused_parameters=False,
-                )
-            else:
-                self.ddp_model = self.model  # Fallback to non-DDP if not using multiple GPUs
+        if th.cuda.is_available() and dist.is_initialized():
+            self.use_ddp = True
+            self.ddp_model = DDP(
+                self.model,
+                device_ids=[dist_util.dev()],
+                output_device=dist_util.dev(),
+                broadcast_buffers=False,
+                bucket_cap_mb=128,
+                find_unused_parameters=False,
+            )
         else:
             if dist.is_initialized() and dist.get_world_size() > 1:
-                logger.warn("Distributed training requires CUDA. Gradients will not be synchronized properly!")
+                logger.warn(
+                    "Distributed training requires CUDA. "
+                    "Gradients will not be synchronized properly!"
+                )
             self.use_ddp = False
             self.ddp_model = self.model
 
     def _load_and_sync_parameters(self):
         resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
         if resume_checkpoint:
-            print('Resuming model')
+            print('resume model')
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
-            if not dist.is_initialized() or dist.get_rank() == 0:  # Check if rank 0 in distributed or no distribution
+            if dist.get_rank() == 0 if dist.is_initialized() else True:
                 logger.log(f"loading model from checkpoint: {resume_checkpoint}...")
                 self.model.load_part_state_dict(
                     dist_util.load_state_dict(
                         resume_checkpoint, map_location=dist_util.dev()
                     )
                 )
-        if dist.is_initialized():  # Only sync parameters if distributed is initialized
+
+        if dist.is_initialized():
             dist_util.sync_params(self.model.parameters())
 
     def _load_ema_parameters(self, rate):
@@ -133,28 +130,38 @@ class TrainLoop:
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate)
         if ema_checkpoint:
-            if not dist.is_initialized() or dist.get_rank() == 0:  # Handle rank in distributed setups
+            if dist.get_rank() == 0 if dist.is_initialized() else True:
                 logger.log(f"loading EMA from checkpoint: {ema_checkpoint}...")
                 state_dict = dist_util.load_state_dict(
                     ema_checkpoint, map_location=dist_util.dev()
                 )
                 ema_params = self.mp_trainer.state_dict_to_master_params(state_dict)
+
         if dist.is_initialized():
             dist_util.sync_params(ema_params)
         return ema_params
 
     def _load_optimizer_state(self):
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        opt_checkpoint = bf.join(bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt")
+        opt_checkpoint = bf.join(
+            bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
+        )
         if bf.exists(opt_checkpoint):
             logger.log(f"loading optimizer state from checkpoint: {opt_checkpoint}")
-            state_dict = dist_util.load_state_dict(opt_checkpoint, map_location=dist_util.dev())
+            state_dict = dist_util.load_state_dict(
+                opt_checkpoint, map_location=dist_util.dev()
+            )
             self.opt.load_state_dict(state_dict)
 
     def run_loop(self):
         i = 0
         data_iter = iter(self.dataloader)
-        while not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps:
+        while (
+            not self.lr_anneal_steps
+            or self.step + self.resume_step < self.lr_anneal_steps
+        ):
+
+            print("WHILE: start")
             try:
                 batch, cond, name = next(data_iter)
             except StopIteration:
@@ -162,8 +169,10 @@ class TrainLoop:
                 batch, cond, name = next(data_iter)
 
             self.run_step(batch, cond)
-            i += 1
+            print("lr_anneal_steps: ",self.lr_anneal_steps)
 
+            i += 1
+            print("i",i)
             if self.step % self.log_interval == 0:
                 logger.dumpkvs()
             if self.step % self.save_interval == 0:
@@ -171,13 +180,12 @@ class TrainLoop:
                 if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
                     return
             self.step += 1
-
         if (self.step - 1) % self.save_interval != 0:
             self.save()
 
     def run_step(self, batch, cond):
-        batch = th.cat((batch, cond), dim=1)
-        cond = {}
+        batch=th.cat((batch, cond), dim=1)
+        cond={}
         sample = self.forward_backward(batch, cond)
         took_step = self.mp_trainer.optimize(self.opt)
         if took_step:
@@ -189,10 +197,12 @@ class TrainLoop:
     def forward_backward(self, batch, cond):
         self.mp_trainer.zero_grad()
         for i in range(0, batch.shape[0], self.microbatch):
-            micro = batch[i: i + self.microbatch].to(dist_util.dev())
+            micro = batch[i : i + self.microbatch].to(dist_util.dev())
             micro_cond = {
-                k: v[i: i + self.microbatch].to(dist_util.dev()) for k, v in cond.items()
+                k: v[i : i + self.microbatch].to(dist_util.dev())
+                for k, v in cond.items()
             }
+
             last_batch = (i + self.microbatch) >= batch.shape[0]
             t, weights = self.schedule_sampler.sample(micro.shape[0], dist_util.dev())
 
@@ -212,15 +222,21 @@ class TrainLoop:
                     losses1 = compute_losses()
 
             if isinstance(self.schedule_sampler, LossAwareSampler):
-                self.schedule_sampler.update_with_local_losses(t, losses1[0]["loss"].detach())
-
+                self.schedule_sampler.update_with_local_losses(
+                    t, losses1[0]["loss"].detach()
+                )
             losses = losses1[0]
             sample = losses1[1]
-            loss = (losses["loss"] * weights + losses['loss_cal'] * 10).mean()
-            log_loss_dict(self.diffusion, t, {k: v * weights for k, v in losses.items()})
-            self.mp_trainer.backward(loss)
 
-        return sample
+            loss = (losses["loss"] * weights + losses['loss_cal'] * 10).mean()
+            log_loss_dict(
+                self.diffusion, t, {k: v * weights for k, v in losses.items()}
+            )
+            self.mp_trainer.backward(loss)
+            for name, param in self.ddp_model.named_parameters():
+                if param.grad is None:
+                    print(name)
+            return  sample
 
     def _update_ema(self):
         for rate, params in zip(self.ema_rate, self.ema_params):
@@ -241,9 +257,9 @@ class TrainLoop:
     def save(self):
         def save_checkpoint(rate, params):
             state_dict = self.mp_trainer.master_params_to_state_dict(params)
-            if not dist.is_initialized() or dist.get_rank() == 0:
+            if dist.get_rank() == 0 if dist.is_initialized() else True:
                 logger.log(f"saving model {rate}...")
-                filename = f"savedmodel{(self.step + self.resume_step):06d}.pt" if not rate else f"emasavedmodel_{rate}_{(self.step + self.resume_step):06d}.pt"
+                filename = f"savedmodel{(self.step+self.resume_step):06d}.pt" if not rate else f"emasavedmodel_{rate}_{(self.step+self.resume_step):06d}.pt"
                 with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
                     th.save(state_dict, f)
 
@@ -251,12 +267,18 @@ class TrainLoop:
         for rate, params in zip(self.ema_rate, self.ema_params):
             save_checkpoint(rate, params)
 
-        if not dist.is_initialized() or dist.get_rank() == 0:
-            with bf.BlobFile(bf.join(get_blob_logdir(), f"optsavedmodel{(self.step + self.resume_step):06d}.pt"), "wb") as f:
+        if dist.get_rank() == 0 if dist.is_initialized() else True:
+            with bf.BlobFile(
+                bf.join(get_blob_logdir(), f"optsavedmodel{(self.step+self.resume_step):06d}.pt"),
+                "wb",
+            ) as f:
                 th.save(self.opt.state_dict(), f)
 
         if dist.is_initialized():
             dist.barrier()
+
+# Additional utility functions (parse_resume_step_from_filename, get_blob_logdir, etc.) remain the same
+
 
 
 def parse_resume_step_from_filename(filename):
