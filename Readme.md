@@ -124,7 +124,7 @@ The models were trained on the ISIC 2018 dataset:
 
 ---
 
-## **Model Training**
+## **Model Training, Sampling and Evaluation**
 ### Medsegdiff
 
 1. Navigate to the `ML/` folder:
@@ -141,7 +141,15 @@ The models were trained on the ISIC 2018 dataset:
    ```
 4. Train the model using following terminal command line:
    ```bash
-   python ML/Medsegdiff/scripts/segmentation_train.py --data_name ISIC --data_dir /dataset --out_dir ML/Medsegdiff/output --image_size 256 --num_channels 128 --class_cond False --num_res_blocks 2 --num_heads 1 --learn_sigma True --use_scale_shift_norm False --attention_resolutions 16 --diffusion_steps 1000 --noise_schedule linear --rescale_learned_sigmas False --rescale_timesteps False --lr 1e-4 --batch_size 12  --lr_anneal_steps 50000 --save_interval 1000 --log_interval 500
+   python ML/Medsegdiff/scripts/segmentation_train.py --data_name ISIC --data_dir /dataset --out_dir ML/Medsegdiff/output --image_size 256 --num_channels 128 --class_cond False --num_res_blocks 2 --num_heads 1 --learn_sigma True --use_scale_shift_norm False --attention_resolutions 16 --diffusion_steps 1000 --noise_schedule linear --rescale_learned_sigmas False --rescale_timesteps False --lr 1e-4 --batch_size 12  --lr_anneal_steps 50000 --save_interval 1000 --log_interval 500 --multi_gpu 2
+   ```
+5. Sampling the trained model using command line:
+   ```bash
+   python ML/Medsegdiff/scripts/segmentation_sample.py --data_name ISIC --data_dir /dataset --out_dir ML/Medsegdiff/output/segmentation/ --model_path ML/Medsegdiff/output/emasavedmodel_0.9999_050000.pt --image_size 256 --num_channels 512 --class_cond False --num_res_blocks 12 --num_heads 8 --learn_sigma True --use_scale_shift_norm True --attention_resolutions 24 --diffusion_steps 1000 --noise_schedule linear --rescale_learned_sigmas True --rescale_timesteps True --num_ensemble 5 --dpm_solver True --multi_gpu 2
+   ```
+6. Evaluation:
+   ```bash
+   python ML/Medsegdiff/scripts/segmentation_env.py --inp_pth  ML/Medsegdiff/output/segmentation --out_pth dataset/ISIC2018_Task1_Validation_GroundTruth
    ```
 
 ### TbConvL-Net
@@ -161,6 +169,14 @@ The models were trained on the ISIC 2018 dataset:
 4. Train the model using following terminal command line:
    ```bash
    python train.py --train_images_dir 'dataset/ISIC2018_Task1-2_Training_Input' --train_masks_dir 'dataset/ISIC2018_Task1_Training_GroundTruth' --save_model_path 'ML/TbConvL-Net/model/trainedmodel.pth' --batch_size 24  --learning_rate 0.0001  --num_epochs 100
+   ```
+5. Model sampling:
+   ```bash 
+   python segmentation.py --model_pth 'ML/TbConvL-Net/model/trainedmodel.pth' --test_images_dir 'dataset/ISIC2018_Task1-2_Validation_Input' --test_masks_dir 'dataset/ISIC2018_Task1_Validation_GroundTruth' --save_dir_pred 'ML/TbConvL-Net/output/segmented predicted images' --save_dir_gt 'ML/TbConvL-Net/output/segmented ground truth'
+   ```
+6. Evaluation:
+   ```bash
+   python evaluate.py --test_images_dir 'dataset/ISIC2018_Task1-2_Validation_Input' --test_masks_dir 'dataset/ISIC2018_Task1_Validation_GroundTruth' --model_pth 'ML/TbConvL-Net/model/trainedmodel.pth'
    ```
 
 ---
@@ -224,9 +240,7 @@ The models were trained on the ISIC 2018 dataset:
 
 - **Performance Tuning**: Performance of the MedSegDiff-v2 model can be improved based on the system performance by adjusting/modifying the argument (e.g., `multi_gpu`, `dpm_solver`) in `/sample` in `AI/app.py` and `segmentation_sample.py` in `shared/models/MedSegDiffv2/segmentation_sample.py`.
 
-- **Training Time**: Training time depends on the dataset size, hyperparameter configuration, and available resources.
-   - **Training Time Approximation**: For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture training time would be ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel.
-   Batch Size: Adjusted to 18 (optimal for GPU memory usage).
+- **Training Time**: Training time depends on the dataset size, hyperparameter configuration, and available resources.For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture training time would be ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel. We have adjusted batch Size to 18 (optimal for GPU memory usage).
 
 ### **Adding New Models**
 
