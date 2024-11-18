@@ -222,12 +222,11 @@ The models were trained on the ISIC 2018 dataset:
 - **GPU Specifications**: Katana provided access to 2x NVIDIA Tesla V100-SXM2 GPUs, each with 32GB of VRAM. These GPUs are optimized for large-scale deep learning tasks, enabling efficient parallel computations for model training and sampling.
 - **Pre-sampled Images**: For MedSegDiff-v2, Pre-sampled images for the ISIC dataset are provided as part of the project. These images are ready for evaluation without requiring additional sampling.
 
-Performance of the MedSegDiff-v2 model can be improved based on the system performance by adjusting/modifying the argument (e.g., `multi_gpu`, `dpm_solver`) in `/sample` in `AI/app.py` and `segmentation_sample.py` in `shared/models/MedSegDiffv2/segmentation_sample.py`.
+- **Performance Tuning**: Performance of the MedSegDiff-v2 model can be improved based on the system performance by adjusting/modifying the argument (e.g., `multi_gpu`, `dpm_solver`) in `/sample` in `AI/app.py` and `segmentation_sample.py` in `shared/models/MedSegDiffv2/segmentation_sample.py`.
 
 - **Training Time**: Training time depends on the dataset size, hyperparameter configuration, and available resources.
-   - **Approximation**: For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture:
-   - **Training Time**: ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel.
-Batch Size: Adjusted to 18 (optimal for GPU memory usage).
+   - **Training Time Approximation**: For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture training time would be ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel.
+   Batch Size: Adjusted to 18 (optimal for GPU memory usage).
 
 ### **Adding New Models**
 
