@@ -27,34 +27,35 @@ Handles dataset preparation tasks, either inside or outside Docker:
 ### **ML/**
 
 Includes scripts and files for training machine learning models.
-- `MedsegDiff/`:  root folder of your project related to medical image segmentation using diffusion models. Contains subfolders `guided_diffusion`, `scripts`.
-   - `guided_diffusion/`: hold the core implementation for diffusion models, including utilities, loaders, and training scripts.
-      - `btcvloader.py`: Loading the BTCV dataset or related data.
-      - `gaussian_diffusion.py`: Implements the Gaussian diffusion process for the model.
-      - `isicloader.py`: For loading ISIC dataset images (a dataset for skin lesion analysis).
-      - `train_util.py`: Utility functions or classes for training the model.
-      - `unet.py`: The implementation of the U-Net model, possibly adapted for diffusion tasks.
-      - `losses.py`: Custom loss functions for training.
-      - `logger.py`: Handles logging during training and testing.
-      - `utils.py`: Generic utility functions used throughout the project.
-      - `resample.py`: Handles sampling and resampling in the diffusion process.
-      - `respacing.py`: Manages custom timestep schedules for diffusion.
-      - `script_util.py`: Provides helper functions for scripting tasks.
-      - `dpm_solver.py`: Implements solvers for accelerated diffusion steps.
-      - `fp16_util.py`: Utilities for mixed-precision (FP16) training.
-      - `nn.py`: Custom neural network layers and utilities.
-   - `scripts/`: This directory seems to include high-level scripts for tasks related to segmentation.
-      - `segmentation_env.py`: Likely sets up the environment or configuration for segmentation tasks.
-      - `segmentation_sample.py`: A script for sampling segmented images using the trained diffusion model.
-      - `segmentation_train.py`: Handles the training of the segmentation model.
-      - `segmentation_env_PerClass.py`: Could be specialized for per-class segmentation tasks or metrics.
+
+- `MedsegDiff/`: root folder of your project related to medical image segmentation using diffusion models. Contains subfolders `guided_diffusion`, `scripts`.
+  - `guided_diffusion/`: hold the core implementation for diffusion models, including utilities, loaders, and training scripts.
+    - `btcvloader.py`: Loading the BTCV dataset or related data.
+    - `gaussian_diffusion.py`: Implements the Gaussian diffusion process for the model.
+    - `isicloader.py`: For loading ISIC dataset images (a dataset for skin lesion analysis).
+    - `train_util.py`: Utility functions or classes for training the model.
+    - `unet.py`: The implementation of the U-Net model, possibly adapted for diffusion tasks.
+    - `losses.py`: Custom loss functions for training.
+    - `logger.py`: Handles logging during training and testing.
+    - `utils.py`: Generic utility functions used throughout the project.
+    - `resample.py`: Handles sampling and resampling in the diffusion process.
+    - `respacing.py`: Manages custom timestep schedules for diffusion.
+    - `script_util.py`: Provides helper functions for scripting tasks.
+    - `dpm_solver.py`: Implements solvers for accelerated diffusion steps.
+    - `fp16_util.py`: Utilities for mixed-precision (FP16) training.
+    - `nn.py`: Custom neural network layers and utilities.
+  - `scripts/`: This directory seems to include high-level scripts for tasks related to segmentation.
+    - `segmentation_env.py`: Likely sets up the environment or configuration for segmentation tasks.
+    - `segmentation_sample.py`: A script for sampling segmented images using the trained diffusion model.
+    - `segmentation_train.py`: Handles the training of the segmentation model.
+    - `segmentation_env_PerClass.py`: Could be specialized for per-class segmentation tasks or metrics.
 - `TbConvL-Net/`: Contains files related to the TBConvL-Net model, which might be integrated into your segmentation or diffusion architecture.
-   - `evaluate.py`: Script for evaluating the TBConvL-Net model’s performance.
-   - `SegmentationDataset.py`: Custom dataset class for handling segmentation-specific data.
-   - `segmentation.py`: Script for sampling the TBConvL-Net model’s with respective ground truth images.
-   - `SwinUnet.py`: Likely the implementation of the Swin Transformer U-Net.
-   - `train.py`: Script for training TBConvL-Net.
-   - `TBConvLet-Net PyTorch.ipynb`: A Jupyter notebook for experimenting with the TBConvL-Net in PyTorch.
+  - `evaluate.py`: Script for evaluating the TBConvL-Net model’s performance.
+  - `SegmentationDataset.py`: Custom dataset class for handling segmentation-specific data.
+  - `segmentation.py`: Script for sampling the TBConvL-Net model’s with respective ground truth images.
+  - `SwinUnet.py`: Likely the implementation of the Swin Transformer U-Net.
+  - `train.py`: Script for training TBConvL-Net.
+  - `TBConvLet-Net PyTorch.ipynb`: A Jupyter notebook for experimenting with the TBConvL-Net in PyTorch.
 
 ### **shared/**
 
@@ -125,6 +126,7 @@ The models were trained on the ISIC 2018 dataset:
 ---
 
 ## **Model Training, Sampling and Evaluation**
+
 ### Medsegdiff
 
 1. Navigate to the `ML/` folder:
@@ -171,7 +173,7 @@ The models were trained on the ISIC 2018 dataset:
    python train.py --train_images_dir 'dataset/ISIC2018_Task1-2_Training_Input' --train_masks_dir 'dataset/ISIC2018_Task1_Training_GroundTruth' --save_model_path 'ML/TbConvL-Net/model/trainedmodel.pth' --batch_size 24  --learning_rate 0.0001  --num_epochs 100
    ```
 5. Model sampling:
-   ```bash 
+   ```bash
    python segmentation.py --model_pth 'ML/TbConvL-Net/model/trainedmodel.pth' --test_images_dir 'dataset/ISIC2018_Task1-2_Validation_Input' --test_masks_dir 'dataset/ISIC2018_Task1_Validation_GroundTruth' --save_dir_pred 'ML/TbConvL-Net/output/segmented predicted images' --save_dir_gt 'ML/TbConvL-Net/output/segmented ground truth'
    ```
 6. Evaluation:
@@ -182,6 +184,8 @@ The models were trained on the ISIC 2018 dataset:
 ---
 
 ## **Dataset Setup**
+
+You can download the sample data from [Sample Data](https://unsw-my.sharepoint.com/:f:/g/personal/z5445071_ad_unsw_edu_au/Em32wh9uRHhOgPMbT1qhfCMBZYw9jWQGnNOxMy8imSUE3g?e=Qde6R6).
 
 ### Method 1: Outside Docker
 
@@ -237,7 +241,13 @@ The models were trained on the ISIC 2018 dataset:
 - **Training Environment**: The MedSegDiff-v2 model was trained using the UNSW Katana supercomputer. utilizing high-performance hardware and resources.
 - **GPU Specifications**: Katana provided access to 2x NVIDIA Tesla V100-SXM2 GPUs, each with 32GB of VRAM. These GPUs are optimized for large-scale deep learning tasks, enabling efficient parallel computations for model training and sampling.
 - **Pre-sampled Images**: For MedSegDiff-v2, Pre-sampled images for the ISIC dataset are provided as part of the project. These images are ready for evaluation without requiring additional sampling.
+- **Training Environment**: The MedSegDiff-v2 model was trained using the UNSW Katana supercomputer. utilizing high-performance hardware and resources.
+- **GPU Specifications**: Katana provided access to 2x NVIDIA Tesla V100-SXM2 GPUs, each with 32GB of VRAM. These GPUs are optimized for large-scale deep learning tasks, enabling efficient parallel computations for model training and sampling.
+- **Pre-sampled Images**: For MedSegDiff-v2, Pre-sampled images for the ISIC dataset are provided as part of the project. These images are ready for evaluation without requiring additional sampling.
 
+- **Performance Tuning**: Performance of the MedSegDiff-v2 model can be improved based on the system performance by adjusting/modifying the argument (e.g., `multi_gpu`, `dpm_solver`) in `/sample` in `AI/app.py` and `segmentation_sample.py` in `shared/models/MedSegDiffv2/segmentation_sample.py`.
+
+- **Training Time**: Training time depends on the dataset size, hyperparameter configuration, and available resources.For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture training time would be ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel. We have adjusted batch Size to 18 (optimal for GPU memory usage).
 - **Performance Tuning**: Performance of the MedSegDiff-v2 model can be improved based on the system performance by adjusting/modifying the argument (e.g., `multi_gpu`, `dpm_solver`) in `/sample` in `AI/app.py` and `segmentation_sample.py` in `shared/models/MedSegDiffv2/segmentation_sample.py`.
 
 - **Training Time**: Training time depends on the dataset size, hyperparameter configuration, and available resources.For training on the ISIC dataset (256x256 image resolution) with the MedSegDiff-v2 architecture training time would be ~12–24 hours per model, utilizing both Tesla V100 GPUs in parallel. We have adjusted batch Size to 18 (optimal for GPU memory usage).
