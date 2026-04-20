@@ -1,4 +1,4 @@
-# Potatoes Medical Image Segmenter
+# Medical Image Segmenter
 
 ## **Project Overview**
 
